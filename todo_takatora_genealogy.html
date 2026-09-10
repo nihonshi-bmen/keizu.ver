@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<title>藤堂高虎 家族系図マップ(自動レイアウト版)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;600;700;900&amp;family=Zen+Kaku+Gothic+New:wght@400;500;700&amp;family=Cormorant+Garamond:ital,wght@0,500;1,500&amp;family=Shippori+Antique+B1&amp;display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f9faf9; --paper-soft:#f3f4f2; --card:#ececea; --ink:#2b2f2d; --ink-soft:#847f72; --line:#dcdcd7;
+    --celadon:#8a9a8f; --brick:#9c5040;
+    --shibata:#2b2f2d; --oda:#5c6b62; --azai:#8a9a8f; --sakuma:#9c5040; --hineno:#8a8172; --gray:#a19c8e;
+    --adoption:#9c5040; /* 養子・養女線の色(家の色とは独立) */
+    --gold:#a4926a;
+    --c-uncertain:#9c5040; --c-genealogy:#5c6b62; --c-unknown:#a19c8e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0; overscroll-behavior:none;}
+  body{ font-family:"Shippori Antique B1", serif; color:var(--ink); background:var(--paper); }
+  .app{ position:relative; width:100%; border:1px solid var(--line); overflow:hidden; }
+
+  .topbar{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:18px 20px 14px; background:var(--paper); color:var(--ink); border-bottom:1px solid var(--ink);
+  }
+  .title{ font-family:"Shippori Antique B1", serif; font-weight:700; font-size:20px; letter-spacing:.08em; }
+  .title [contenteditable]{ outline:none; border-radius:2px; padding:1px 3px; margin:-1px -3px; }
+  .title [contenteditable]:hover{ background:var(--paper-soft); }
+  .title [contenteditable]:focus{ background:var(--card); box-shadow:0 0 0 1px var(--celadon); }
+
+  .resize-handle{
+    height:14px; cursor:ns-resize; display:flex; align-items:center; justify-content:center;
+    background:var(--paper); border-bottom:1px solid var(--line);
+  }
+  .resize-handle span{ width:36px; height:3px; border-radius:2px; background:var(--line); }
+  .resize-handle:hover span{ background:var(--celadon); }
+  .resize-handle.dragging span{ background:var(--brick); }
+  .title small{ display:block; font-family:"Shippori Antique B1", serif; font-weight:400; font-size:10.5px; color:var(--ink-soft); margin-top:5px; letter-spacing:.02em; }
+
+
+  .policy{ padding:10px 20px; background:var(--paper-soft); border-bottom:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); line-height:1.7; }
+  .policy b{ color:var(--ink); font-weight:500; }
+
+  .legend-row{
+    display:flex; flex-wrap:wrap; gap:16px; align-items:center;
+    padding:10px 20px; background:var(--paper); border-bottom:1px solid var(--line); font-size:10.5px; color:var(--ink-soft);
+  }
+  .legend-group{ display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+  .legend-group b{ color:var(--ink-soft); margin-right:2px; font-weight:500; }
+  .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:0; }
+  .lkey{ display:inline-flex; align-items:center; white-space:nowrap; }
+  .lline{ width:18px; height:0; border-top:1.5px solid var(--ink-soft); display:inline-block; margin-right:4px; }
+  .lline.dashed{ border-top-style:dashed; border-color:var(--adoption); }
+  .lline.thin-dashed{ border-top-style:dashed; border-width:1px; }
+  .lline.gold{ border-color:var(--gold); border-top-style:dashed; }
+  .lbox{ width:14px; height:9px; border:1.4px dashed var(--ink-soft); display:inline-block; margin-right:4px; }
+  .pill-sample{ font-size:9px; padding:1px 6px; border-radius:20px; margin-right:4px; background:transparent; border:1px solid currentColor; }
+
+  .viewport{ position:relative; height:640px; overflow:hidden; cursor:grab; background:var(--paper); touch-action:none; }
+  .viewport.dragging{ cursor:grabbing; }
+  .world{ position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform; }
+  .world.animating{ transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+  svg.edges{ position:absolute; top:0; left:0; overflow:visible; }
+  #groupBoxLayer{ position:absolute; top:0; left:0; }
+  .group-box{ position:absolute; border-radius:28px; border:2px solid; pointer-events:none; }
+  .group-box-label{
+    position:absolute; top:-14px; left:16px; padding:2px 12px; border-radius:10px;
+    font-family:"Shippori Antique B1", serif; font-size:13px; font-weight:700; letter-spacing:.06em;
+    background:var(--bg,#f5f2ea); opacity:0.9;
+  }
+  .edge-label rect{ fill:var(--paper); stroke:var(--line); stroke-width:1; }
+  .edge-label text{ fill:var(--ink-soft); font:500 10px "Zen Kaku Gothic New",sans-serif; text-anchor:middle; }
+
+  .node{
+    position:absolute; width:158px; padding:10px 11px 9px;
+    border-radius:0; background:var(--card);
+    border:1px solid var(--ink);
+    box-shadow:0 1px 0 rgba(32,30,26,.04);
+    cursor:pointer; transform:translate(-50%,-50%);
+    transition:box-shadow .15s ease, transform .15s ease, opacity .15s ease;
+  }
+  .node .fam{ font:500 8.5px "Zen Kaku Gothic New",sans-serif; letter-spacing:.14em; color:var(--nc,var(--ink-soft)); }
+  .node .name{ font-family:"Shippori Antique B1", serif; font-weight:400; font-size:16px; margin-top:5px; line-height:1.3; color:var(--ink); letter-spacing:.03em; }
+  .node.unnamed .name{ font-family:"Shippori Antique B1", serif; font-weight:500; color:var(--ink-soft); }
+  .node.unnamed{ border-style:dashed; }
+  .node .role{ margin-top:5px; font-size:9.5px; color:var(--ink-soft); line-height:1.4; }
+  .node .pill{ display:inline-block; margin-top:7px; padding:2px 8px; border-radius:20px; font-size:8.5px; letter-spacing:.03em; background:transparent; border:1px solid currentColor; }
+
+  .node.dim{ opacity:.2; }
+  .node.hi{ box-shadow:0 0 0 1px var(--celadon), 0 4px 12px rgba(32,30,26,.14); transform:translate(-50%,-50%) scale(1.05); z-index:10; }
+  .node.selected{ box-shadow:0 0 0 1px var(--brick), 0 4px 14px rgba(32,30,26,.16); z-index:11; }
+
+  /* 主人公カード(protagonist:trueを付けた人物):一回り大きく、朱色の縁でひと目でわかるようにする */
+  .node.protagonist{
+    width:230px; padding:16px 18px 14px; z-index:5;
+    background: linear-gradient(180deg, rgba(164,146,106,.20), rgba(164,146,106,.06) 60%), var(--card);
+    border:2px solid var(--brick);
+    box-shadow:0 3px 14px rgba(156,80,64,.22);
+  }
+  .node.protagonist .fam{ color:var(--brick); font-weight:700; font-size:9.5px; }
+  .node.protagonist .name{ font-size:21px; }
+  .node.protagonist .role{ font-size:10.5px; }
+  .node.protagonist.hi{ transform:translate(-50%,-50%) scale(1.05); }
+  .node.protagonist.selected{ box-shadow:0 0 0 1.5px var(--brick), 0 5px 16px rgba(156,80,64,.28); }
+
+  .house-shibata{ --nc:var(--shibata); } .house-oda{ --nc:var(--oda); } .house-azai{ --nc:var(--azai); }
+  .house-sakuma{ --nc:var(--sakuma); } .house-hineno{ --nc:var(--hineno); } .house-other{ --nc:var(--gray); }
+
+  .controls{ position:absolute; right:14px; bottom:14px; display:flex; flex-direction:column; gap:6px; z-index:30; }
+  .controls button{ width:36px; height:36px; border-radius:0; border:1px solid var(--ink); background:var(--paper); color:var(--ink); font-size:16px; cursor:pointer; }
+  .controls .reset{ font-size:10.5px; font-weight:500; }
+  .controls .edit-toggle{ width:auto; padding:0 12px; font-size:10.5px; font-weight:500; white-space:nowrap; letter-spacing:.03em; }
+  .controls .edit-toggle.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+  .edit-panel{
+    display:none; position:absolute; left:14px; top:14px; z-index:32;
+    background:var(--card); border:1px solid var(--ink);
+    padding:14px 16px; box-shadow:0 6px 18px rgba(32,30,26,.12);
+    max-width:300px; flex-direction:column; gap:9px;
+  }
+  .edit-panel p{ margin:0; font-size:11.5px; color:var(--ink-soft); }
+  .cascade-label{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink); cursor:pointer; }
+  .edit-panel-buttons{ display:flex; gap:8px; flex-wrap:wrap; }
+  .edit-panel-buttons button{
+    font-size:10.5px; padding:6px 11px; border-radius:20px; border:1px solid var(--ink); letter-spacing:.02em;
+    background:var(--ink); color:var(--paper); cursor:pointer;
+  }
+  .edit-panel-buttons button#resetPositionsBtn{ background:var(--paper); color:var(--ink); }
+  .edit-panel-buttons button#saveFileBtn{ background:var(--brick); color:var(--paper); border-color:var(--brick); font-weight:700; }
+
+  .save-overlay{
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(32,30,26,.55);
+    align-items:center; justify-content:center;
+  }
+  .save-overlay.show{ display:flex; }
+  .save-overlay-box{
+    background:var(--paper,#fff); width:min(640px,92vw); max-height:86vh;
+    padding:22px 24px; overflow:auto; border:1px solid var(--ink,#222);
+  }
+  .save-overlay-box h4{ margin:0 0 8px; font-family:"Shippori Antique B1", serif; font-size:18px; }
+  .save-overlay-box p{ font-size:12.5px; line-height:1.7; margin:0 0 10px; color:var(--ink-soft,#555); }
+  .save-overlay-box .save-overlay-note{ background:rgba(156,80,64,.08); border-left:3px solid var(--brick,#9c5040); padding:8px 10px; }
+  .save-overlay-buttons{ display:flex; gap:8px; margin:10px 0; }
+  .save-overlay-buttons button{ padding:8px 14px; font-size:13px; border:1px solid var(--ink,#222); background:var(--card,#eee); cursor:pointer; }
+  #copyFullHtmlBtn{ background:var(--brick,#9c5040); color:#fff; border-color:var(--brick,#9c5040); font-weight:700; }
+  #fullHtmlOutput{
+    width:100%; height:220px; box-sizing:border-box; font-family:monospace; font-size:11px;
+    padding:8px; margin-top:4px;
+  }
+  #copyOutput{
+    display:none; width:100%; height:110px; font-size:10.5px; font-family:monospace;
+    padding:8px; border-radius:0; border:1px solid var(--line); resize:vertical; background:var(--paper-soft);
+  }
+
+  .viewport.edit-mode{ cursor:default; }
+  .viewport.edit-mode .node{ cursor:pointer; }
+  .node.being-dragged{ opacity:0.85; z-index:20; box-shadow:0 8px 20px rgba(32,30,26,.2); }
+  .node.manual{ border-top-width:2px; box-shadow:0 0 0 1px var(--celadon); }
+  .hint{ position:absolute; left:14px; bottom:14px; font-size:10.5px; color:var(--ink-soft); background:rgba(250,248,243,0.9); padding:5px 11px; border:1px solid var(--line); z-index:30; pointer-events:none; }
+
+  .edit-form{
+    display:none; position:absolute; top:14px; right:14px; width:280px; max-height:85%; overflow-y:auto;
+    background:var(--card); border:1px solid var(--ink);
+    box-shadow:0 8px 24px rgba(32,30,26,.14); padding:18px; z-index:36;
+  }
+  .edit-form.show{ display:block; }
+  .edit-form .close{ position:absolute; top:10px; right:12px; cursor:pointer; font-size:14px; color:var(--ink-soft); background:none; border:none; }
+  .edit-form h4{ margin:0 0 12px; font-family:"Shippori Antique B1", serif; font-weight:600; font-size:16px; letter-spacing:.04em; }
+  .edit-form label{ display:block; font-size:10.5px; color:var(--ink-soft); margin-top:10px; }
+  .edit-form label.ef_checkbox{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink); margin-top:10px; }
+  .edit-form input[type="text"], .edit-form select, .edit-form textarea{
+    width:100%; margin-top:3px; font-size:12px; font-family:"Shippori Antique B1", serif;
+    padding:6px 9px; border-radius:0; border:1px solid var(--line); background:var(--paper); color:var(--ink); resize:vertical;
+  }
+  .edit-form input[type="text"]:focus, .edit-form select:focus, .edit-form textarea:focus{ outline:none; border-color:var(--ink); }
+  .edit-form-buttons{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .edit-form-buttons button{
+    font-size:10.5px; padding:6px 11px; border-radius:20px; border:1px solid var(--ink); cursor:pointer; letter-spacing:.02em;
+  }
+  .edit-form-buttons button#ef_save{ background:var(--ink); color:var(--paper); }
+  .edit-form-buttons button#ef_resetOne{ background:var(--paper); color:var(--ink); }
+  .edit-form-buttons button#ef_delete{ background:var(--paper); color:var(--brick); border-color:var(--brick); margin-left:auto; }
+  .ef_delete_confirm{ display:none; margin-top:10px; padding:11px; border-radius:0; background:var(--paper-soft); border:1px solid var(--brick); }
+  .ef_delete_confirm.show{ display:block; }
+  .ef_delete_confirm p{ margin:0 0 8px; font-size:11px; color:var(--brick); line-height:1.6; }
+  .ef_delete_confirm .edit-form-buttons{ margin-top:0; }
+  .ef_delete_confirm button#ef_delete_yes{ background:var(--brick); color:var(--paper); border-color:var(--brick); }
+  .ef_delete_confirm button#ef_delete_no{ background:var(--paper); color:var(--ink); }
+  .ef_relations{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }
+  .ef_relations_note{ margin:0 0 4px; font-size:10px; color:var(--ink-soft); }
+  .ef_relations.disabled{ opacity:0.4; pointer-events:none; }
+
+  .panel{
+    position:absolute; top:14px; right:14px; max-height:calc(100% - 156px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--ink); width:270px;
+    box-shadow:0 8px 24px rgba(32,30,26,.14); padding:18px; z-index:35; display:none;
+  }
+  .panel.show{ display:block; }
+  .panel-handle{ display:none; }
+  .panel .close{ position:absolute; top:10px; right:12px; cursor:pointer; font-size:14px; color:var(--ink-soft); background:none; border:none; }
+  .panel .pname{ font-family:"Shippori Antique B1", serif; font-weight:700; font-size:19px; letter-spacing:.04em; }
+  .panel .pname.unnamed{ font-family:"Shippori Antique B1", serif; font-weight:500; color:var(--ink-soft); }
+  .panel .pyomi{ font-family:"Shippori Antique B1", serif; font-size:12px; color:var(--ink-soft); margin-top:3px; }
+  .panel .ptags{ margin-top:10px; }
+  .panel .ptag{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:10px; margin:0 6px 6px 0; background:transparent; border:1px solid currentColor; }
+  .panel .pnote{ font-size:12.5px; line-height:1.85; color:var(--ink); margin-top:10px; }
+  .panel .prelatives{ margin-top:10px; padding-top:9px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink); line-height:1.9; }
+  .panel .prelatives .rel-row{ display:flex; gap:6px; }
+  .panel .prelatives .rel-label{ flex:0 0 auto; width:4.2em; color:var(--ink-soft); font-weight:700; }
+  .panel .prelatives .rel-values{ flex:1; }
+  .panel .prelatives .rel-link{ color:var(--ink); text-decoration:underline; text-decoration-color:var(--line); cursor:pointer; }
+  .panel .prelatives .rel-link:hover{ text-decoration-color:var(--ink); }
+  .panel .psources{ margin-top:12px; padding-top:9px; border-top:1px solid var(--line); font-size:10.5px; color:var(--ink-soft); }
+  .panel .psources ul{ margin:4px 0 0; padding-left:18px; }
+
+  .list-section{ padding:26px 24px 30px; background:var(--paper); border-top:1px solid var(--ink); }
+  .list-section h3{ margin:0 0 5px; font-family:"Shippori Antique B1", serif; font-weight:700; font-size:21px; letter-spacing:.05em; }
+  .list-section .lead{ margin:0 0 18px; font-size:11.5px; color:var(--ink-soft); }
+  details.person{ margin:0 0 8px; border:1px solid var(--line); border-left:2px solid var(--nc,var(--ink)); background:var(--card); border-radius:0; }
+  details.person summary{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding:12px 14px; cursor:pointer; font-family:"Shippori Antique B1", serif; }
+  details.person summary .dname{ font-family:"Shippori Antique B1", serif; font-size:15px; font-weight:600; letter-spacing:.02em; }
+  details.person summary .dname.unnamed{ font-family:"Shippori Antique B1", serif; font-weight:500; color:var(--ink-soft); }
+  details.person summary .drole{ font-size:10.5px; color:var(--ink-soft); }
+  details.person .body{ padding:0 16px 16px; border-top:1px solid var(--line); font-size:12.5px; line-height:1.85; }
+  details.person .yomi{ font-family:"Shippori Antique B1", serif; font-size:11.5px; color:var(--ink-soft); letter-spacing:.03em; margin-top:11px; }
+  details.person .src{ margin-top:9px; padding-top:7px; border-top:1px solid var(--line); font-size:10.5px; color:var(--ink-soft); }
+
+  @media(max-width:640px){
+    .viewport{ height:70vh; }
+    /* 解説パネル(.panel)を画面右上の重なりから、画面下部の「ボトムシート」に変更。
+       系図の上半分が常に見える状態を保ちつつ、詳細を確認できるようにする。 */
+    .panel{
+      position:fixed; top:auto; left:0; right:0; bottom:0; width:100%;
+      max-height:45vh; border-radius:14px 14px 0 0; border-bottom:none;
+      box-shadow:0 -8px 24px rgba(32,30,26,.22); padding:16px 18px 22px;
+      box-sizing:border-box; z-index:200;
+    }
+    .panel .close{ top:8px; right:10px; font-size:22px; padding:6px 10px; line-height:1; }
+    .panel-handle{
+      display:block; position:absolute; top:8px; left:50%; transform:translateX(-50%);
+      width:40px; height:5px; border-radius:3px; background:var(--line,#dcdcd7); cursor:grab;
+    }
+    .panel.dragging{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="title"><span id="mainTitle" contenteditable="true" spellcheck="false" data-orig="藤堂高虎 家族系図">藤堂高虎 家族系図</span><small id="mainSubtitle" contenteditable="true" spellcheck="false" data-orig=""></small></div>
+  </div>
+  <div class="legend-row">
+    <div class="legend-group"><b>確度:</b>
+      <span class="lkey"><i class="pill-sample" style="color:var(--c-genealogy)">系譜類に記載</i></span>
+      <span class="lkey"><i class="pill-sample" style="color:var(--c-uncertain)">諸説・要検討</i></span>
+      <span class="lkey"><i class="pill-sample" style="color:var(--c-unknown)">氏名・出自不詳</i></span>
+    </div>
+    <div class="legend-group"><b>線:</b>
+      <span class="lkey"><i class="lline"></i>実親子</span>
+      <span class="lkey"><i class="lline dashed"></i>養子・養女</span>
+      <span class="lkey"><i class="lline gold"></i>婚姻</span>
+      <span class="lkey"><i class="lline thin-dashed"></i>前夫婦</span>
+      <span class="lkey"><i class="lbox"></i>氏名不詳</span>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+    <div class="world" id="world" style="width: 4048px; height: 2605px; transform: translate(358.148px, -457.401px) scale(0.880595);">
+      <div id="groupBoxLayer"></div>
+      <svg class="edges" id="edges" width="4048" height="2605"><g class="edge" data-a="todo_tadataka" data-b="todo_torataka">
+      <line x1="1358.8770053475937" y1="300" x2="1436.1229946524063" y2="570" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1348.5" y="418" width="98" height="22" rx="11"></rect><text x="1397.5" y="433">岳父(婿養子)</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="todo_takanori">
+      <line x1="1531" y1="645.1067961165048" x2="2195" y2="836.8932038834952" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1848" y="724" width="30" height="22" rx="11"></rect><text x="1863" y="739">父</text></g>
+    </g><g class="edge" data-a="todo_tadataka" data-b="tora">
+      <line x1="1331.903743315508" y1="300" x2="1269.096256684492" y2="570" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1285.5" y="418" width="30" height="22" rx="11"></rect><text x="1300.5" y="433">父</text></g>
+    </g><g class="edge" data-a="todo_tadataka" data-b="todo_tadataka_daughter7">
+      <line x1="1271.1191709844559" y1="300" x2="875.880829015544" y2="582" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1058.5" y="424" width="30" height="22" rx="11"></rect><text x="1073.5" y="439">父</text></g>
+    </g><g class="edge" data-a="todo_tadataka" data-b="todo_tadataka_daughter8">
+      <line x1="1264" y1="280.8403001071811" x2="491" y2="598.1596998928188" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="862.5" y="422.5" width="30" height="22" rx="11"></rect><text x="877.5" y="437.5">父</text></g>
+    </g><g class="edge" data-a="todo_tadataka" data-b="todo_yoshimasa2">
+      <line x1="1264" y1="290.13991769547323" x2="695" y2="589.8600823045267" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="960.5" y="423" width="38" height="22" rx="11"></rect><text x="979.5" y="438">養父</text></g>
+    </g><g class="edge" data-a="taga_yoshinari" data-b="todo_yoshimasa2">
+      <line x1="613.436974789916" y1="446" x2="614.563025210084" y2="580" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="599" y="496" width="30" height="22" rx="11"></rect><text x="614" y="511">父</text></g>
+    </g><g class="edge" data-a="todo_tadataka" data-b="todo_yoshinao">
+      <line x1="1264" y1="275.2597864768683" x2="300" y2="603.7402135231316" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="763" y="422.5" width="38" height="22" rx="11"></rect><text x="782" y="437.5">養父</text></g>
+    </g><g class="edge" data-a="taga_takakata" data-b="todo_yoshinao">
+      <line x1="223.13333333333333" y1="443" x2="220.86666666666667" y2="579" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="207" y="494" width="30" height="22" rx="11"></rect><text x="222" y="509">父</text></g>
+    </g><g class="edge" data-a="todo_yoshinao" data-b="taga_yoshikiyo">
+      <line x1="220" y1="683" x2="220" y2="749" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="205" y="699" width="30" height="22" rx="11"></rect><text x="220" y="714">父</text></g>
+    </g><g class="edge" data-a="taga_yoshikiyo" data-b="taga_yoshimochi">
+      <line x1="220" y1="853" x2="220" y2="919" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="205" y="869" width="30" height="22" rx="11"></rect><text x="220" y="884">父</text></g>
+    </g><g class="edge" data-a="taga_yoshimochi" data-b="taga_yoshimasa3">
+      <line x1="220" y1="1023" x2="220" y2="1089" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="205" y="1039" width="30" height="22" rx="11"></rect><text x="220" y="1054">父</text></g>
+    </g><g class="edge" data-a="taga_yoshimasa3" data-b="taga_yoshimune">
+      <line x1="220" y1="1193" x2="220" y2="1259" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="205" y="1209" width="30" height="22" rx="11"></rect><text x="220" y="1224">父</text></g>
+    </g><g class="edge" data-a="taga_yoshimune" data-b="taga_yoshiaki">
+      <line x1="220" y1="1363" x2="220" y2="1429" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="205" y="1379" width="30" height="22" rx="11"></rect><text x="220" y="1394">父</text></g>
+    </g><g class="edge" data-a="mitsui_noritsuna2" data-b="todo_torataka">
+      <line x1="1538.986928104575" y1="368" x2="1469.013071895425" y2="570" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1489" y="452" width="30" height="22" rx="11"></rect><text x="1504" y="467">父</text></g>
+    </g><g class="edge" data-a="asai_katsumasa" data-b="tora">
+      <line x1="1043.6915422885572" y1="272" x2="1225.3084577114428" y2="570" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1115.5" y="404" width="38" height="22" rx="11"></rect><text x="1134.5" y="419">養父</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="daughter_suzuki">
+      <line x1="1478.9338842975208" y1="674" x2="1553.0661157024792" y2="812" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1501" y="726" width="30" height="22" rx="11"></rect><text x="1516" y="741">父</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="todo_takatora">
+      <line x1="1435.7240356083087" y1="674" x2="1373.4451038575667" y2="886" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1389.5845697329378" y="763" width="30" height="22" rx="11"></rect><text x="1404.5845697329378" y="778">父</text></g>
+    </g><g class="edge" data-a="tora" data-b="todo_takatora">
+      <line x1="1271.658753709199" y1="674" x2="1331.421364985163" y2="886" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1286.5400593471809" y="763" width="30" height="22" rx="11"></rect><text x="1301.5400593471809" y="778">母</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="todo_masataka">
+      <line x1="1531" y1="641.1967871485944" x2="2367" y2="841.8032128514056" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1934" y="724.5" width="30" height="22" rx="11"></rect><text x="1949" y="739.5">父</text></g>
+    </g><g class="edge" data-a="miyazaki_shi" data-b="todo_masataka">
+      <line x1="1734" y1="614.6418663303909" x2="2367" y2="833.3581336696091" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2035.5" y="707" width="30" height="22" rx="11"></rect><text x="2050.5" y="722">母</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="daughter_yamaoka">
+      <line x1="1516.2719665271966" y1="674" x2="1685.7280334728034" y2="809" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1586" y="724.5" width="30" height="22" rx="11"></rect><text x="1601" y="739.5">父</text></g>
+    </g><g class="edge" data-a="miyazaki_shi" data-b="daughter_yamaoka">
+      <line x1="1672.4087591240875" y1="639" x2="1732.5912408759125" y2="809" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1687.5" y="707" width="30" height="22" rx="11"></rect><text x="1702.5" y="722">母</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="todo_takakiyo">
+      <line x1="1531" y1="651.4281298299845" x2="2018" y2="830.5718701700155" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1759.5" y="724" width="30" height="22" rx="11"></rect><text x="1774.5" y="739">父</text></g>
+    </g><g class="edge" data-a="miyazaki_shi" data-b="todo_takakiyo">
+      <line x1="1734" y1="636.1891891891892" x2="2018" y2="810.8108108108108" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1861" y="706.5" width="30" height="22" rx="11"></rect><text x="1876" y="721.5">母</text></g>
+    </g><g class="edge" data-a="todo_torataka" data-b="daughter_todo_yoshitsura">
+      <line x1="1531" y1="662.3389830508474" x2="1843" y2="819.6610169491526" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1672" y="724" width="30" height="22" rx="11"></rect><text x="1687" y="739">父</text></g>
+    </g><g class="edge" data-a="miyazaki_shi" data-b="daughter_todo_yoshitsura">
+      <line x1="1705.2380952380952" y1="639" x2="1871.7619047619048" y2="808" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1773.5" y="706.5" width="30" height="22" rx="11"></rect><text x="1788.5" y="721.5">母</text></g>
+    </g><g class="edge" data-a="shojuin" data-b="todo_takatsugu">
+      <line x1="1109.0601719197707" y1="996" x2="1311.9398280802293" y2="1241" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1195.5" y="1101.5" width="30" height="22" rx="11"></rect><text x="1210.5" y="1116.5">母</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="todo_takatsugu">
+      <line x1="1352.6556886227545" y1="1032" x2="1354.5329341317365" y2="1241" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1338.5943113772455" y="1119.5" width="30" height="22" rx="11"></rect><text x="1353.5943113772455" y="1134.5">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_daughter1">
+      <line x1="1275" y1="1333.3091190108191" x2="788" y2="1578.6908809891809" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1016.5" y="1439" width="30" height="22" rx="11"></rect><text x="1031.5" y="1454">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_daughter2">
+      <line x1="1280.3703703703704" y1="1345" x2="964.6296296296296" y2="1565" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1107.5" y="1438" width="30" height="22" rx="11"></rect><text x="1122.5" y="1453">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_takahisa">
+      <line x1="1353.5375" y1="1345" x2="1347.4625" y2="1561" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1335.5" y="1436" width="30" height="22" rx="11"></rect><text x="1350.5" y="1451">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_takamichi">
+      <line x1="1402.0788643533124" y1="1345" x2="1594.9211356466876" y2="1558" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1483.5" y="1434.5" width="30" height="22" rx="11"></rect><text x="1498.5" y="1449.5">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_takakata">
+      <line x1="1435" y1="1333.8684546615582" x2="2058" y2="1652.1315453384418" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1731.5" y="1476" width="30" height="22" rx="11"></rect><text x="1746.5" y="1491">父</text></g>
+    </g><g class="edge" data-a="todo_takamichi" data-b="todo_takatoshi">
+      <line x1="1681.374485596708" y1="1662" x2="1786.625514403292" y2="1801" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1719" y="1714.5" width="30" height="22" rx="11"></rect><text x="1734" y="1729.5">父</text></g>
+    </g><g class="edge" data-a="todo_takamichi" data-b="todo_takakata">
+      <line x1="1722" y1="1623.3870967741937" x2="2058" y2="1679.6129032258063" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1871" y="1634.5" width="38" height="22" rx="11"></rect><text x="1890" y="1649.5">養父</text></g>
+    </g><g class="edge" data-a="todo_takakata" data-b="todo_takanobu">
+      <line x1="2140.6" y1="1745" x2="2145.4" y2="1841" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2128" y="1776" width="30" height="22" rx="11"></rect><text x="2143" y="1791">父</text></g>
+    </g><g class="edge" data-a="todo_takanobu" data-b="todo_takaharu">
+      <line x1="2119.163636363636" y1="1945" x2="2054.836363636364" y2="2061" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2068" y="1986" width="38" height="22" rx="11"></rect><text x="2087" y="2001">養父</text></g>
+    </g><g class="edge" data-a="todo_takaharu" data-b="todo_takatoyo">
+      <line x1="2026.1911764705883" y1="2165" x2="2026.8088235294117" y2="2333" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2007.5" y="2232" width="38" height="22" rx="11"></rect><text x="2026.5" y="2247">養父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_daughter3">
+      <line x1="1308.1517027863777" y1="1345" x2="1110.8482972136223" y2="1564" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1194.5" y="1437.5" width="30" height="22" rx="11"></rect><text x="1209.5" y="1452.5">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_daughter4">
+      <line x1="1435" y1="1317.5993031358885" x2="2423" y2="1621.4006968641115" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1914" y="1452.5" width="30" height="22" rx="11"></rect><text x="1929" y="1467.5">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_mototsune">
+      <line x1="1435" y1="1314.433962264151" x2="2600" y2="1626.566037735849" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2002.5" y="1453.5" width="30" height="22" rx="11"></rect><text x="2017.5" y="1468.5">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_daughter5">
+      <line x1="1435" y1="1311.9712758851035" x2="2772" y2="1629.0287241148965" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2088.5" y="1453.5" width="30" height="22" rx="11"></rect><text x="2103.5" y="1468.5">父</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="todo_takachika">
+      <line x1="1377.1764705882354" y1="1345" x2="1535.8235294117646" y2="1717" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1441.5" y="1514" width="30" height="22" rx="11"></rect><text x="1456.5" y="1529">父</text></g>
+    </g><g class="edge" data-a="todo_takahisa" data-b="todo_takachika">
+      <line x1="1416.6666666666667" y1="1665" x2="1487.3333333333333" y2="1717" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1433" y="1674" width="38" height="22" rx="11"></rect><text x="1452" y="1689">養父</text></g>
+    </g><g class="edge" data-a="todo_takachika" data-b="todo_takatoshi">
+      <line x1="1638" y1="1794.0746268656717" x2="1746" y2="1827.9253731343283" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1673" y="1794" width="38" height="22" rx="11"></rect><text x="1692" y="1809">養父</text></g>
+    </g><g class="edge" data-a="todo_takatoshi" data-b="todo_takaharu">
+      <line x1="1866" y1="1905" x2="1986" y2="2061" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1907" y="1966" width="38" height="22" rx="11"></rect><text x="1926" y="1981">養父</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="todo_takashige">
+      <line x1="1237" y1="1006.7629233511586" x2="871" y2="1158.7736185383244" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1039" y="1065.7682709447415" width="30" height="22" rx="11"></rect><text x="1054" y="1080.7682709447415">父</text></g>
+    </g><g class="edge" data-a="shojuin" data-b="todo_takashige">
+      <line x1="1008.3387096774194" y1="996" x2="848.6612903225806" y2="1140" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="913.5" y="1051" width="30" height="22" rx="11"></rect><text x="928.5" y="1066">母</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="kamehime">
+      <line x1="1467" y1="993.514687100894" x2="2055" y2="1169.9897828863345" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1746" y="1064.7522349936144" width="30" height="22" rx="11"></rect><text x="1761" y="1079.7522349936144">父</text></g>
+    </g><g class="edge" data-a="shojuin" data-b="kamehime">
+      <line x1="1146" y1="962.7090739008419" x2="2055" y2="1175.290926099158" stroke="#a19c8e" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1585.5" y="1052" width="30" height="22" rx="11"></rect><text x="1600.5" y="1067">母</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="daughter_tadasue">
+      <line x1="1467" y1="981.9431162407254" x2="2485" y2="1185.0395713107996" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
+      <g class="edge-label"><rect x="1961" y="1066.4913437757625" width="30" height="22" rx="11"></rect><text x="1976" y="1081.4913437757625">父</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="todo_takayoshi">
+      <line x1="1237" y1="993.8484848484849" x2="673" y2="1164.7575757575758" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="936" y="1062.3030303030303" width="38" height="22" rx="11"></rect><text x="955" y="1077.3030303030303">養父</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="daughter_ikoma">
+      <line x1="1467" y1="978.7964285714286" x2="2672" y2="1186.2285714285715" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2050.5" y="1065.5125" width="38" height="22" rx="11"></rect><text x="2069.5" y="1080.5125">養父</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="daughter_todo_takanori2">
+      <line x1="1467" y1="974.4276131917272" x2="3061" y2="1188.2677473448855" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2245" y="1064.3476802683062" width="38" height="22" rx="11"></rect><text x="2264" y="1079.3476802683062">養父</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="daughter_kobori">
+      <line x1="1467" y1="971.0290798611111" x2="3576" y2="1191.6319444444443" stroke="#9c5040" stroke-width="2" stroke-dasharray="9 7" opacity="0.6"></line>
+      <g class="edge-label"><rect x="2502.5" y="1064.3305121527778" width="38" height="22" rx="11"></rect><text x="2521.5" y="1079.3305121527778">養父</text></g>
+    </g><g class="edge" data-a="todo_tadataka_daughter7" data-b="todo_yoshimasa2">
+      <line x1="723" y1="633.1489361702128" x2="695" y2="632.8510638297872" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="690" y="614" width="38" height="22" rx="11"></rect><text x="709" y="629">婚姻</text></g>
+    </g><g class="edge" data-a="todo_tadataka_daughter8" data-b="todo_yoshinao">
+      <line x1="331" y1="631" x2="300" y2="631" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="296.5" y="612" width="38" height="22" rx="11"></rect><text x="315.5" y="627">婚姻</text></g>
+    </g><g class="edge" data-a="todo_takatsugu" data-b="takatsugu_wife">
+      <line x1="1275" y1="1261.2051282051282" x2="1201" y2="1231.7948717948718" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="1219" y="1227.5" width="38" height="22" rx="11"></rect><text x="1238" y="1242.5">婚姻</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="kyuhoin">
+      <line x1="1237" y1="915.9129287598945" x2="1053" y2="846.9736147757255" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="1126" y="862.4432717678101" width="38" height="22" rx="11"></rect><text x="1145" y="877.4432717678101">正室</text></g>
+    </g><g class="edge" data-a="todo_takatora" data-b="shojuin">
+      <line x1="1237" y1="952.9685314685315" x2="1146" y2="948.1958041958042" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="1172.5" y="931.5821678321679" width="38" height="22" rx="11"></rect><text x="1191.5" y="946.5821678321679">継室</text></g>
+    </g><g class="edge" data-a="kamehime" data-b="gamou_tadasato">
+      <line x1="2215" y1="1194.3921568627452" x2="2259" y2="1194.6078431372548" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="2218" y="1175.5" width="38" height="22" rx="11"></rect><text x="2237" y="1190.5">婚姻</text></g>
+    </g><g class="edge" data-a="daughter_ikoma" data-b="ikoma_masatoshi">
+      <line x1="2832" y1="1200.8" x2="2872" y2="1201.2" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="2833" y="1182" width="38" height="22" rx="11"></rect><text x="2852" y="1197">婚姻</text></g>
+    </g><g class="edge" data-a="daughter_todo_takanori2" data-b="todo_takanori2">
+      <line x1="3221" y1="1199" x2="3253" y2="1199" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="3218" y="1180" width="38" height="22" rx="11"></rect><text x="3237" y="1195">婚姻</text></g>
+    </g><g class="edge" data-a="daughter_kobori" data-b="kobori_masakazu">
+      <line x1="3736" y1="1200" x2="3748" y2="1200" stroke="#8a9a8f" stroke-dasharray="2 5" stroke-width="2.4" opacity="0.75"></line>
+      <g class="edge-label"><rect x="3723" y="1181" width="38" height="22" rx="11"></rect><text x="3742" y="1196">婚姻</text></g>
+    </g></svg>
+      <div id="nodesLayer"></div>
+    </div>
+    <div class="controls">
+      <button id="editModeBtn" class="edit-toggle">編集モード</button>
+      <button id="zoomIn">＋</button>
+      <button id="zoomOut">－</button>
+      <button class="reset" id="resetView">全体</button>
+    </div>
+    <div class="edit-panel" id="editPanel" style="display: none;">
+      <p>編集モード中:カードをドラッグで移動、クリックで内容を編集できます。</p>
+      <label class="cascade-label"><input type="checkbox" id="cascadeChildren" checked=""> 子孫も一緒に動かす</label>
+      <div class="edit-panel-buttons">
+        <button id="addCardBtn">＋ 新しいカードを追加</button>
+        <button id="saveFileBtn" class="save-file">💾 ファイルを保存</button>
+        <button id="copyPositionsBtn">変更をコピー</button>
+        <button id="resetPositionsBtn">動かした位置をリセット</button>
+      </div>
+      <textarea id="copyOutput" readonly="" style="display: none;"></textarea>
+    </div>
+    <div class="save-overlay" id="saveOverlay">
+      <div class="save-overlay-box">
+        <h4>ファイルの保存</h4>
+        <p id="saveOverlayStatus"></p>
+        <p class="save-overlay-note">プレビュー画面ではダウンロードがブロックされる場合があります。その場合は下のボタンで全文をコピーし、テキストエディタに貼り付けて「.html」の拡張子で保存してください(すでにダウンロードできていれば、この操作は不要です)。</p>
+        <div class="save-overlay-buttons">
+          <button id="copyFullHtmlBtn">📋 ファイル全文をコピー</button>
+          <button id="saveOverlayClose">閉じる</button>
+        </div>
+        <textarea id="fullHtmlOutput" readonly=""></textarea>
+      </div>
+    </div>
+    <div class="edit-form" id="editForm">
+      <button class="close" id="editFormClose">✕</button>
+      <h4 id="ef_title">カードの内容を編集</h4>
+      <label>名前<input type="text" id="ef_name"></label>
+      <label>肩書き・役割<input type="text" id="ef_role"></label>
+      <label>よみ<input type="text" id="ef_yomi"></label>
+      <label>家<select id="ef_house"><option value="todo">藤堂家</option><option value="niwa">丹羽家</option><option value="other">記録不詳</option><option value="todo">藤堂家</option><option value="niwa">丹羽家</option><option value="other">記録不詳</option><option value="todo">藤堂家</option><option value="niwa">丹羽家</option><option value="other">記録不詳</option><option value="todo">藤堂家</option><option value="niwa">丹羽家</option><option value="other">記録不詳</option><option value="todo">藤堂家</option><option value="niwa">丹羽家</option><option value="other">記録不詳</option></select></label>
+      <label>確度<select id="ef_certainty"><option value="genealogy">系譜類に記載</option><option value="uncertain">諸説・要検討</option><option value="unknown">氏名・出自不詳</option><option value="genealogy">系譜類に記載</option><option value="uncertain">諸説・要検討</option><option value="unknown">氏名・出自不詳</option><option value="genealogy">系譜類に記載</option><option value="uncertain">諸説・要検討</option><option value="unknown">氏名・出自不詳</option><option value="genealogy">系譜類に記載</option><option value="uncertain">諸説・要検討</option><option value="unknown">氏名・出自不詳</option><option value="genealogy">系譜類に記載</option><option value="uncertain">諸説・要検討</option><option value="unknown">氏名・出自不詳</option></select></label>
+      <label class="ef_checkbox"><input type="checkbox" id="ef_unnamed"> 氏名不詳として表示(点線枠)</label>
+      <label>説明文<textarea id="ef_note" rows="4"></textarea></label>
+      <label>出典(1行に1つ)<textarea id="ef_sources" rows="2"></textarea></label>
+      <div id="ef_relations" class="ef_relations">
+        <p class="ef_relations_note">この人物の関係(いつでも設定・変更できます)</p>
+        <label>父<select id="ef_father"><option value="">(なし)</option><option value="todo_tadataka">藤堂忠高（良隆）</option><option value="mitsui_noritsuna2">三井出羽守乗綱</option><option value="todo_tadataka_daughter7">氏名不詳</option><option value="todo_yoshimasa2">多賀新助良政(新七郎)</option><option value="taga_yoshinari">多賀新助良成</option><option value="todo_tadataka_daughter8">氏名不詳</option><option value="todo_yoshinao">多賀将監良直(嘉房)</option><option value="taga_takakata">多賀豊後守忠高(高賢)</option><option value="taga_yoshimochi">多賀良以(嘉以)</option><option value="taga_yoshimasa3">多賀良正(嘉正)</option><option value="taga_yoshimune">多賀良宗(高嘉)</option><option value="taga_yoshiaki">多賀良明</option><option value="asai_katsumasa">浅井備前守勝政</option><option value="tora">氏名不詳</option><option value="todo_torataka">藤堂虎高</option><option value="todo_takanori">藤堂高則</option><option value="daughter_suzuki">氏名不詳</option><option value="todo_takatora">藤堂高虎</option><option value="miyazaki_shi">氏名不詳(宮崎氏)</option><option value="daughter_yamaoka">氏名不詳</option><option value="todo_takakiyo">藤堂高清</option><option value="todo_masataka">藤堂正高</option><option value="daughter_todo_yoshitsura">氏名不詳</option><option value="kyuhoin">久芳院</option><option value="shojuin">松寿院(まつ)</option><option value="todo_takatsugu">藤堂高次</option><option value="takatsugu_wife">氏名不詳(平井徳右衛門の娘)</option><option value="todo_daughter1">氏名不詳</option><option value="todo_daughter2">氏名不詳</option><option value="todo_takahisa">藤堂高久</option><option value="todo_takamichi">藤堂高通</option><option value="todo_takakata">藤堂高堅</option><option value="todo_daughter3">氏名不詳</option><option value="todo_daughter4">氏名不詳</option><option value="todo_mototsune">藤堂基恒</option><option value="todo_daughter5">氏名不詳</option><option value="todo_takachika">藤堂高睦</option><option value="todo_takatoshi">藤堂高敏</option><option value="todo_takaharu">藤堂高治</option><option value="todo_takanobu">藤堂高陳</option><option value="todo_takatoyo">藤堂高豊(高朗)</option><option value="todo_takashige">藤堂高重</option><option value="kamehime">亀姫</option><option value="gamou_tadasato">蒲生忠郷(松平忠郷)</option><option value="daughter_tadasue">氏名不詳</option><option value="todo_takayoshi">藤堂高吉</option><option value="daughter_ikoma">氏名不詳</option><option value="ikoma_masatoshi">生駒正俊</option><option value="daughter_todo_takanori2">氏名不詳</option><option value="todo_takanori2">藤堂高刑</option><option value="daughter_kobori">氏名不詳</option><option value="kobori_masakazu">小堀政一(遠州)</option></select></label>
+        <label>母<select id="ef_mother"><option value="">(なし)</option><option value="todo_tadataka">藤堂忠高（良隆）</option><option value="mitsui_noritsuna2">三井出羽守乗綱</option><option value="todo_tadataka_daughter7">氏名不詳</option><option value="todo_yoshimasa2">多賀新助良政(新七郎)</option><option value="taga_yoshinari">多賀新助良成</option><option value="todo_tadataka_daughter8">氏名不詳</option><option value="todo_yoshinao">多賀将監良直(嘉房)</option><option value="taga_takakata">多賀豊後守忠高(高賢)</option><option value="taga_yoshimochi">多賀良以(嘉以)</option><option value="taga_yoshimasa3">多賀良正(嘉正)</option><option value="taga_yoshimune">多賀良宗(高嘉)</option><option value="taga_yoshiaki">多賀良明</option><option value="asai_katsumasa">浅井備前守勝政</option><option value="tora">氏名不詳</option><option value="todo_torataka">藤堂虎高</option><option value="todo_takanori">藤堂高則</option><option value="daughter_suzuki">氏名不詳</option><option value="todo_takatora">藤堂高虎</option><option value="miyazaki_shi">氏名不詳(宮崎氏)</option><option value="daughter_yamaoka">氏名不詳</option><option value="todo_takakiyo">藤堂高清</option><option value="todo_masataka">藤堂正高</option><option value="daughter_todo_yoshitsura">氏名不詳</option><option value="kyuhoin">久芳院</option><option value="shojuin">松寿院(まつ)</option><option value="todo_takatsugu">藤堂高次</option><option value="takatsugu_wife">氏名不詳(平井徳右衛門の娘)</option><option value="todo_daughter1">氏名不詳</option><option value="todo_daughter2">氏名不詳</option><option value="todo_takahisa">藤堂高久</option><option value="todo_takamichi">藤堂高通</option><option value="todo_takakata">藤堂高堅</option><option value="todo_daughter3">氏名不詳</option><option value="todo_daughter4">氏名不詳</option><option value="todo_mototsune">藤堂基恒</option><option value="todo_daughter5">氏名不詳</option><option value="todo_takachika">藤堂高睦</option><option value="todo_takatoshi">藤堂高敏</option><option value="todo_takaharu">藤堂高治</option><option value="todo_takanobu">藤堂高陳</option><option value="todo_takatoyo">藤堂高豊(高朗)</option><option value="todo_takashige">藤堂高重</option><option value="kamehime">亀姫</option><option value="gamou_tadasato">蒲生忠郷(松平忠郷)</option><option value="daughter_tadasue">氏名不詳</option><option value="todo_takayoshi">藤堂高吉</option><option value="daughter_ikoma">氏名不詳</option><option value="ikoma_masatoshi">生駒正俊</option><option value="daughter_todo_takanori2">氏名不詳</option><option value="todo_takanori2">藤堂高刑</option><option value="daughter_kobori">氏名不詳</option><option value="kobori_masakazu">小堀政一(遠州)</option></select></label>
+        <label>配偶者<select id="ef_spouse"><option value="">(なし)</option><option value="todo_tadataka">藤堂忠高（良隆）</option><option value="mitsui_noritsuna2">三井出羽守乗綱</option><option value="todo_tadataka_daughter7">氏名不詳</option><option value="todo_yoshimasa2">多賀新助良政(新七郎)</option><option value="taga_yoshinari">多賀新助良成</option><option value="todo_tadataka_daughter8">氏名不詳</option><option value="todo_yoshinao">多賀将監良直(嘉房)</option><option value="taga_takakata">多賀豊後守忠高(高賢)</option><option value="taga_yoshimochi">多賀良以(嘉以)</option><option value="taga_yoshimasa3">多賀良正(嘉正)</option><option value="taga_yoshimune">多賀良宗(高嘉)</option><option value="taga_yoshiaki">多賀良明</option><option value="asai_katsumasa">浅井備前守勝政</option><option value="tora">氏名不詳</option><option value="todo_torataka">藤堂虎高</option><option value="todo_takanori">藤堂高則</option><option value="daughter_suzuki">氏名不詳</option><option value="todo_takatora">藤堂高虎</option><option value="miyazaki_shi">氏名不詳(宮崎氏)</option><option value="daughter_yamaoka">氏名不詳</option><option value="todo_takakiyo">藤堂高清</option><option value="todo_masataka">藤堂正高</option><option value="daughter_todo_yoshitsura">氏名不詳</option><option value="kyuhoin">久芳院</option><option value="shojuin">松寿院(まつ)</option><option value="todo_takatsugu">藤堂高次</option><option value="takatsugu_wife">氏名不詳(平井徳右衛門の娘)</option><option value="todo_daughter1">氏名不詳</option><option value="todo_daughter2">氏名不詳</option><option value="todo_takahisa">藤堂高久</option><option value="todo_takamichi">藤堂高通</option><option value="todo_takakata">藤堂高堅</option><option value="todo_daughter3">氏名不詳</option><option value="todo_daughter4">氏名不詳</option><option value="todo_mototsune">藤堂基恒</option><option value="todo_daughter5">氏名不詳</option><option value="todo_takachika">藤堂高睦</option><option value="todo_takatoshi">藤堂高敏</option><option value="todo_takaharu">藤堂高治</option><option value="todo_takanobu">藤堂高陳</option><option value="todo_takatoyo">藤堂高豊(高朗)</option><option value="todo_takashige">藤堂高重</option><option value="kamehime">亀姫</option><option value="gamou_tadasato">蒲生忠郷(松平忠郷)</option><option value="daughter_tadasue">氏名不詳</option><option value="todo_takayoshi">藤堂高吉</option><option value="daughter_ikoma">氏名不詳</option><option value="ikoma_masatoshi">生駒正俊</option><option value="daughter_todo_takanori2">氏名不詳</option><option value="todo_takanori2">藤堂高刑</option><option value="daughter_kobori">氏名不詳</option><option value="kobori_masakazu">小堀政一(遠州)</option></select></label>
+      </div>
+      <div class="edit-form-buttons">
+        <button id="ef_save">保存</button>
+        <button id="ef_resetOne">このカードをリセット</button>
+        <button id="ef_delete" style="display: inline-block;">🗑 このカードを削除</button>
+      </div>
+      <div class="ef_delete_confirm" id="ef_delete_confirm">
+        <p>本当に削除しますか?この人物への関係線も削除されます(子孫は削除されず、切り離されます)。</p>
+        <div class="edit-form-buttons">
+          <button id="ef_delete_yes">削除する</button>
+          <button id="ef_delete_no">キャンセル</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="panel">
+      <div class="panel-handle" id="panelHandle"></div>
+      <button class="close" id="panelClose">✕</button>
+      <div class="pname" id="pName">藤堂忠高（良隆）</div>
+      <div class="pyomi" id="pYomi">とうどう ただたか</div>
+      <div class="ptags">
+        <span class="ptag" id="pHouse" style="color: rgb(43, 47, 45);">藤堂家</span>
+        <span class="ptag" id="pCertainty" style="color: rgb(92, 107, 98);">系譜類に記載</span>
+      </div>
+      <div class="pnote" id="pNote">近江国犬上郡藤堂村の土豪。のち良隆と名乗ったと『宗国史』にあります。男子はなく、8人の娘があったと『寛政重脩諸家譜』にあります。長女は藤堂虎高の妻(とら)となり、藤堂高虎の外祖父にあたります。7女・8女には他家から養子を迎えて配しました。</div>
+      <div class="prelatives" id="pRelatives"></div>
+      <div class="psources" id="pSources"><strong>根拠・参照</strong><ul><li>Wikipedia「藤堂虎高」</li><li>『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</li><li>藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)</li></ul></div>
+    </div>
+  </div>
+  <div class="resize-handle" id="resizeHandle" title="ドラッグで高さを変更"><span></span></div>
+
+  <section class="list-section" id="listSection">
+    <h3>人物一覧</h3>
+    <p class="lead">系図が読み込めない環境でも内容を確認できるよう、同じ情報をここに一覧で載せています。氏名を押すと詳細が開きます。</p>
+    <div id="listContainer"><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂忠高（良隆）</span>
+        <span class="drole">高虎の外祖父・虎高の岳父</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう ただたか</div>
+        <p>近江国犬上郡藤堂村の土豪。のち良隆と名乗ったと『宗国史』にあります。男子はなく、8人の娘があったと『寛政重脩諸家譜』にあります。長女は藤堂虎高の妻(とら)となり、藤堂高虎の外祖父にあたります。7女・8女には他家から養子を迎えて配しました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂虎高」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">三井出羽守乗綱</span>
+        <span class="drole">虎高の実父</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">みつい のりつな</div>
+        <p>藤堂虎高の実父。虎高は乗綱の次男にあたります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">忠高の七女・良政室</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂忠高の七女。忠高が多賀新助良成の子・新助良政(新七郎)を養子に迎え、その妻となりました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀新助良政(新七郎)</span>
+        <span class="drole">忠高(良隆)の養子・七女の夫</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしまさ</div>
+        <p>多賀新助良成の子、通称新七郎。藤堂忠高(良隆)の養子となり、忠高の七女を妻に迎えました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀新助良成</span>
+        <span class="drole">良政(新七郎)の実父</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしなり</div>
+        <p>多賀新助良政(新七郎)の実父。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">忠高の八女・良直室</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂忠高の八女。忠高が多賀豊後守高賢の二男・多賀将監良直(嘉房)を養子に迎え、その妻となりました。この系統は藤堂近江守良英の祖にあたるとされます。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀将監良直(嘉房)</span>
+        <span class="drole">忠高(良隆)の養子・八女の夫・良英の祖</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしなお</div>
+        <p>多賀豊後守忠高(『寛政重脩諸家譜』では高賢)の二男。通称は勝兵衛、のち将監と称しました。別名嘉房。藤堂忠高(良隆)の養子となり、忠高の八女を妻に迎えました。藤堂近江守良英の祖にあたるとされます。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀豊後守忠高(高賢)</span>
+        <span class="drole">良直(嘉房)の実父</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが ただたか</div>
+        <p>多賀将監良直(嘉房)の実父。『宗国史』では「忠高」、『寛政重脩諸家譜』では「高賢」と名が異なって伝わります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀良政(嘉清)</span>
+        <span class="drole">良直(嘉房)の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしまさ</div>
+        <p>多賀将監良直(嘉房)の子。従五位下玄蕃頭。豊臣秀次に仕え、1万6000石を領しましたが、関ヶ原の役で戦死しました。『寛政重脩諸家譜』では「嘉清」と記されています。</p>
+        <div class="src"><strong>根拠・参照:</strong> 藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀良以(嘉以)</span>
+        <span class="drole">良政(良清)の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしもち</div>
+        <p>多賀良政(良清)の子。『寛政重脩諸家譜』では「嘉以」と記されています。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀良正(嘉正)</span>
+        <span class="drole">良以(嘉以)の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしまさ</div>
+        <p>多賀良以(嘉以)の子。『寛政重脩諸家譜』では「嘉正」と記されています。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀良宗(高嘉)</span>
+        <span class="drole">良正(嘉正)の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしむね</div>
+        <p>多賀良正(嘉正)の子。『寛政重脩諸家譜』では「高嘉」と記されています。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">多賀良明</span>
+        <span class="drole">良宗(高嘉)の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">たが よしあき</div>
+        <p>多賀良宗(高嘉)の子。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">浅井備前守勝政</span>
+        <span class="drole">とらの養父</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">あざい かつまさ</div>
+        <p>藤堂虎高の妻(とら)を養女に迎えた人物。とらの実の父は藤堂忠高(良隆)です。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高虎の母・忠高の娘</span>
+      </summary>
+      <div class="body">
+        
+        <p>『寛政重脩諸家譜』によれば、浅井備前守勝政の養女で、実は藤堂越後守忠高の娘。藤堂虎高の妻で、子は高虎のみと記されています(他の兄弟姉妹は母を異にします)。寛政重脩諸家譜に氏名の記載はありません。なお、Wikipediaでは「とら」の名で多賀良氏の娘とも伝わりますが、原本の記載を優先します。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂虎高</span>
+        <span class="drole">高虎の父</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう とらたか</div>
+        <p>近江国犬上郡藤堂村の土豪。実父は三井出羽守乗綱、その次男として生まれました。若くして甲斐武田氏に仕え武田信虎から「虎」の偏諱を受けたと伝わります。近江に帰国後、藤堂忠高の婿養子となりました。長男・高則は早くに戦死し、次男の高虎に家督を譲りました。慶長4年(1599)、高虎の領地・伊予宇和島城で死去(享年84)。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂虎高」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高則</span>
+        <span class="drole">高虎の兄・源七郎</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかのり</div>
+        <p>藤堂虎高の長男、藤堂高虎の兄。通称源七郎。伊勢国大河内城攻めの際に戦死したと『寛政重脩諸家譜』にあります(原本画像で確認)。早くに戦死したため、弟の高虎が若くして家督を継ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06、原本画像で確認)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">虎高の娘・鈴木弥右衛門某室</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂虎高の娘、藤堂高虎の姉妹。鈴木弥右衛門某に嫁いだと『寛政重脩諸家譜』にあります(原本画像で確認)。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06、原本画像で確認)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高虎</span>
+        <span class="drole">津藩初代藩主・築城三名人</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかとら</div>
+        <p>弘治2年(1556)、近江国犬上郡藤堂村に生まれる。浅井長政、豊臣秀長、豊臣秀保、豊臣秀吉、徳川家康と主君を変え、伊予今治藩主を経て伊勢津藩初代藩主となりました。黒田孝高・加藤清正と並ぶ「築城三名人」の一人。寛永7年(1630)10月5日、江戸の藤堂藩邸にて死去(享年75)。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname unnamed">氏名不詳(宮崎氏)</span>
+        <span class="drole">虎高の妻・正高等の母</span>
+      </summary>
+      <div class="body">
+        
+        <p>宮崎氏。藤堂虎高の妻で、女子(山岡直則室、のち渡邊某室)・高清・正高・女子(藤堂良連室)の生母です。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">虎高の娘・山岡直則室、のち渡邊某室</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂虎高の娘。母は宮崎氏。はじめ家臣・山岡長門直則に嫁ぎ、のち渡邊長兵衛某の妻となりました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高清</span>
+        <span class="drole">高虎の弟</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかきよ</div>
+        <p>藤堂虎高の子、藤堂高虎の弟。母は宮崎氏。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂正高</span>
+        <span class="drole">高虎の弟</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう まさたか</div>
+        <p>藤堂高虎の弟。母は宮崎氏。下総国で3000石を拝領していましたが、元和3年(1617)、これを津藩領に編入し、津藩の石高は32万3000石となりました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">虎高の娘・藤堂良連室</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂虎高の娘。母は宮崎氏。家臣・藤堂玄蕃良連に嫁ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">久芳院</span>
+        <span class="drole">高虎の正室・一色義直の娘</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">きゅうほういん</div>
+        <p>丹後国を治めた一色修理大夫義直の娘。天正9年(1581)、但馬平定に赴いた高虎と結婚しました。夫婦仲は非常に良かったものの、実子には恵まれませんでした。以心崇伝とは久芳院を通した親戚関係にあったと伝わります。元和2年(1616)頃没。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">松寿院(まつ)</span>
+        <span class="drole">高虎の継室・長連久の娘</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">しょうじゅいん</div>
+        <p>但馬国林甫城主・長越前守連久の二女。慶長4年(1599)、久芳院の勧めにより高虎の側室として迎えられ、のち継室となりました。高次・高重・亀姫・藤堂忠季室の生母です。慶安元年(1648)没。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高次</span>
+        <span class="drole">高虎の嫡男・津藩2代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかつぐ</div>
+        <p>藤堂高虎の嫡男(1602-1676)。『寛政重脩諸家譜』には母を「連久の女」(松寿院)と明記しています。高虎の跡を継ぎ、津藩2代藩主となりました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname unnamed">氏名不詳(平井徳右衛門の娘)</span>
+        <span class="drole">高次の妻</span>
+      </summary>
+      <div class="body">
+        
+        <p>平井徳右衛門の娘。藤堂高次の妻で、Wikipedia「藤堂高睦」には高睦の生母として明記されています。他の子女についても同じ母である可能性がありますが、個別の裏付けはまだ確認できていません。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高睦」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高次の娘(1人目)</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高次の娘(2人目)</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高久</span>
+        <span class="drole">高次の子・津藩3代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかひさ</div>
+        <p>藤堂高次の子。津藩3代藩主。寛文9年(1669)に家督を継ぎ、弟の高通に5万石(伊勢国久居藩)、高堅に3000石を分与しました。善政で知られ、『土芥寇讎記』にも高く評価されています。嗣子がなく、弟の高睦を養嗣子としました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高久」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高通</span>
+        <span class="drole">高次の子・久居藩祖</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかみち</div>
+        <p>藤堂高次の子。寛文9年(1669)、兄・高久より5万石を分与され、伊勢国久居藩を立藩しました。久居藩藤堂家の祖です。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂氏」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高堅</span>
+        <span class="drole">高次の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかかた</div>
+        <p>藤堂高次の子。寛文9年(1669)、兄・高久より3000石を分与されました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂氏」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高次の娘(3人目)</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高次の娘(4人目)</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂基恒</span>
+        <span class="drole">高次の子</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう もとつね</div>
+        <p>藤堂高次の子。『寛政重脩諸家譜』第5輯に記載があります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高次の娘(5人目)</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高睦</span>
+        <span class="drole">高次の子・高久の養子・津藩4代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかちか</div>
+        <p>藤堂高次の子。母は平井徳右衛門の娘。貞享2年(1685)、兄で3代藩主の高久に嗣子がなかったため養嗣子となり、元禄16年(1703)の高久死去にともない津藩4代藩主となりました。2男1女があったがいずれも早世し、跡は久居藩から迎えた養嗣子・高敏が継ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高睦」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高敏</span>
+        <span class="drole">高睦の養子・津藩5代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかとし</div>
+        <p>久居藩初代藩主・藤堂高通の三男。藤堂高次の孫にあたります。高睦の2人の男子がいずれも早世したため、宝永2年(1705)に高睦の養嗣子となり、宝永5年(1709)、高睦の死去により津藩5代藩主となりました。享保13年(1728)、疱瘡により死去し、嗣子がなかったため久居藩主・高治が跡を継ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高敏」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高治</span>
+        <span class="drole">高陳の養子・高敏の養子・津藩6代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかはる</div>
+        <p>藤堂出雲家3代・藤堂高明の四男。藤堂高虎の弟・高清を祖とする一門の出身で、高清の曾孫にあたります。享保8年(1723)、久居藩4代藩主・高陳が隠居する際、嗣子がなかったためその養嗣子となり久居藩を継ぎました。享保13年(1728)、本家の津藩主・高敏にも嗣子がなかったため、重ねてその養嗣子となって津藩6代藩主を継ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高治」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高陳</span>
+        <span class="drole">高堅の子・久居藩4代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかのぶ</div>
+        <p>藤堂高堅の子。久居藩4代藩主。嗣子がなかったため、藤堂出雲家の高治を養嗣子に迎えました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高治」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高豊(高朗)</span>
+        <span class="drole">高治の甥・養子・久居藩5代藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかとよ</div>
+        <p>藤堂高治の甥。享保13年(1728)、高治が津藩本家を継いだ際、久居藩の家督は甥で養嗣子の高豊(のちの高朗)が継ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高治」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">藤堂高重</span>
+        <span class="drole">高虎の次男</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかしげ</div>
+        <p>藤堂高虎の次男、通称佐兵衛佐。『寛政重脩諸家譜』には母を「高次と同じ」(松寿院)と明記しています。寛永8年(1631)、26歳で死去し、子孫はありません。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname">亀姫</span>
+        <span class="drole">高虎の娘・蒲生忠郷正室、のち専修寺尭朝室</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">かめひめ</div>
+        <p>藤堂高虎の娘(1608-1660)。母は松寿院(連久の女)。『寛政重脩諸家譜』では最初の夫を「松平下野守忠卿」と記していますが、これは徳川家から松平姓を与えられた会津藩主・蒲生忠郷を指すとみられます。忠郷の死後は伊勢国一身田専修寺の尭朝に嫁ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">蒲生忠郷(松平忠郷)</span>
+        <span class="drole">亀姫の最初の夫・会津藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">がもう たださと</div>
+        <p>陸奥会津藩主。徳川家から松平姓を与えられており、『寛政重脩諸家譜』の「松平下野守忠郷」はこの忠郷を指すとみられます。藤堂高虎の娘・亀姫を正室に迎えました。嗣子なく没し、蒲生家は改易されました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」、『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-todo">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高虎の娘・藤堂忠季室(母は某氏)</span>
+      </summary>
+      <div class="body">
+        
+        <p>藤堂高虎の娘。『寛政重脩諸家譜』には母を「某氏」とのみ記し、松寿院とは別の母とされています。家臣・藤堂作兵衛忠季に嫁ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-niwa">
+      <summary>
+        <span class="dname">藤堂高吉</span>
+        <span class="drole">高虎の養子・丹羽長秀の三男</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかよし</div>
+        <p>丹羽長秀の三男(1579-1670)。豊臣秀長の養子となったのち、実子のいなかった高虎の養子となりました。慶長6年(1601)に高虎の実子・高次が生まれたことで後継の地位を失い、家臣となりました。のち伊賀名張に移封され、名張藤堂家の祖となりました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」、Wikipedia「藤堂高吉」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高虎の養女・生駒正俊室(実父は氏家源左衛門)</span>
+      </summary>
+      <div class="body">
+        
+        <p>高虎の養女。実父は氏家源左衛門某。『寛政重脩諸家譜』には「母不明」と記されています。讃岐高松藩主・生駒讃岐守正俊に嫁ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">生駒正俊</span>
+        <span class="drole">高虎の養女婿・高松藩主</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">いこま まさとし</div>
+        <p>讃岐高松藩主。藤堂高虎の養女(実父は氏家源左衛門)を正室に迎えました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高虎の養女・藤堂高刑室(実父は松永伊勢守某)</span>
+      </summary>
+      <div class="body">
+        
+        <p>高虎の養女。『寛政重脩諸家譜』には実父を松永伊勢守某と明記しています。Wikipediaでは実父を「織田信清」とする異説もありますが、原本の記載を優先します。家臣・藤堂仁右衛門高刑に嫁ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">藤堂高刑</span>
+        <span class="drole">高虎の養女婿・一族</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">とうどう たかのり</div>
+        <p>藤堂一族。高虎の養女を妻に迎えました。大坂夏の陣・八尾の戦いで戦死しています。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname unnamed">氏名不詳</span>
+        <span class="drole">高虎の養女・小堀政一室(実父は藤堂嘉清)</span>
+      </summary>
+      <div class="body">
+        
+        <p>高虎の養女。『寛政重脩諸家譜』によれば実父は藤堂玄蕃頭嘉清です(以前は「藤堂良政」としていましたが、原本記載により訂正しました)。茶人としても知られる小堀遠江守政一(遠州)に嫁ぎました。</p>
+        <div class="src"><strong>根拠・参照:</strong> 『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)、Wikipedia「藤堂高虎」</div>
+      </div>
+    </details><details class="person house-other">
+      <summary>
+        <span class="dname">小堀政一(遠州)</span>
+        <span class="drole">高虎の養女婿・茶人</span>
+      </summary>
+      <div class="body">
+        <div class="yomi">こぼり まさかず</div>
+        <p>江戸時代初期の大名・茶人(小堀遠州)。藤堂高虎の養女(実父は藤堂玄蕃頭嘉清)を正室に迎えました。</p>
+        <div class="src"><strong>根拠・参照:</strong> Wikipedia「藤堂高虎」</div>
+      </div>
+    </details></div>
+  </section>
+</div>
+
+<script>
+/* 「ファイルを保存」機能のために、このスクリプト自身の元のソースコードを控えておく。
+   (実行中のJSの変数の値ではなく、あくまでこのタグに書かれた「文字列としてのコード」を保持する) */
+const ORIGINAL_SCRIPT_SOURCE = document.currentScript.textContent;
+/* =========================================================================
+   データ構造(座標指定は不要。追加した人物と関係から自動的に配置されます):
+
+   nodes[]:  id, name, house, role(補足肩書), yomi(読み/任意),
+             certainty(genealogy|uncertain|unknown),
+             unnamed(true で点線枠+氏名不詳扱い), note(解説文), sources(出典配列),
+             trunk(true で系図の縦軸の起点), protagonist(true でカードを一回り拡大して強調)
+
+   ★ certainty(確度)の基準:
+     - genealogy(系譜類に記載): 寛政重修諸家譜等の一次史料、自治体等の公的サイト、
+       国立国会図書館・国立公文書館、研究書・辞典(PDF可)に直接記載があるもの。
+       Wikipediaが、上記いずれかを名指しで引用している場合も含む。
+     - uncertain(諸説・要検討): Wikipediaのみ、または個人ブログ・個人運営の
+       系図まとめサイトのみを根拠とするもの。単独の個人ブログのみが根拠の場合は
+       カード掲載自体を見送ってよい。
+     - unknown(氏名・出自不詳): 氏名・出自が判明していない人物。空欄にせず
+       「氏名不詳」として系図上に残す。
+
+   parentEdges: [親id, 子id, ラベル, kind(blood|adoption)]
+     → 親のいない人物は自動的に一番上の世代(ルート)として扱われます。
+
+   spouseEdges: [id1, id2, ラベル, kind(marriage|former), gap(任意の間隔調整)]
+     → 配偶者どうしは自動的に同じ段(世代)・隣接する位置に置かれます。
+
+   ★ 新しい人物を増やすときは、nodes に1行追加し、
+      わかっている親・配偶者を parentEdges / spouseEdges に追加するだけでOK。
+      x, y 座標は auto layout エンジンが自動計算します。
+      重複や線の貫通が出た場合は manualPositions で個別に調整してください。
+   ========================================================================= */
+const nodes = [
+  {id:"todo_tadataka", name:"藤堂忠高（良隆）", house:"todo", role:"高虎の外祖父・虎高の岳父", yomi:"とうどう ただたか", certainty:"genealogy", note:"近江国犬上郡藤堂村の土豪。のち良隆と名乗ったと『宗国史』にあります。男子はなく、8人の娘があったと『寛政重脩諸家譜』にあります。長女は藤堂虎高の妻(とら)となり、藤堂高虎の外祖父にあたります。7女・8女には他家から養子を迎えて配しました。", sources:["Wikipedia「藤堂虎高」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"], unnamed:false},
+  {id:"mitsui_noritsuna2", name:"三井出羽守乗綱", house:"other", role:"虎高の実父", yomi:"みつい のりつな", certainty:"genealogy", note:"藤堂虎高の実父。虎高は乗綱の次男にあたります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"todo_tadataka_daughter7", name:"氏名不詳", house:"todo", unnamed:true, role:"忠高の七女・良政室", certainty:"genealogy", note:"藤堂忠高の七女。忠高が多賀新助良成の子・新助良政(新七郎)を養子に迎え、その妻となりました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_yoshimasa2", name:"多賀良政", house:"taga_todo", role:"忠高(良隆)の養子・七女の夫", yomi:"たが よしまさ", certainty:"genealogy", note:"多賀良氏の子、通称新七郎。父・良氏が松尾山で戦死したため、妹の登羅(妙清君)とともに伯父・多賀忠高(越州君・宗悦公、藤堂忠高)のもとへ逃れ、その義子(養子)となりました。忠高の七女を妻に迎えました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"todo_yoshikatsu", name:"藤堂良勝", house:"todo_shinshichiro", role:"良政の子・藤堂新七郎家初代", yomi:"とうどう よしかつ", certainty:"genealogy", note:"多賀良政(とらの兄、忠高の養子)の実子。藤堂新七郎家の初代にあたります。", sources:["藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"taga_father", name:"氏名不詳", house:"taga", unnamed:true, role:"豊後守忠高・良氏の父", certainty:"uncertain", note:"多賀豊後守忠高(良直の実父)と多賀良氏(藤堂忠高の弟)は兄弟と考えられますが、その父の名はまだ確認できていません。両者を結びつけるための便宜上のカードです。", sources:["藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"taga_yoshinari", name:"多賀良氏", house:"taga", role:"忠高の弟・良政と登羅(妙清君)の父", yomi:"たが よしうじ", certainty:"genealogy", note:"通称新助。多賀豊後守忠高(藤堂忠高・良隆)の弟。『宗国史』によれば、松尾山の戦いで戦死しました。子の良政(新七郎)と登羅(菟羅とも、妙清君)は、父の死後、伯父の多賀忠高(越州君・宗悦公、のちの藤堂忠高)のもとへ逃れ、その義子(養子)となりました。", sources:["藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"todo_tadataka_daughter8", name:"氏名不詳", house:"todo", unnamed:true, role:"忠高の八女・良直室", certainty:"genealogy", note:"藤堂忠高の八女。忠高が多賀豊後守高賢の二男・多賀将監良直(嘉房)を養子に迎え、その妻となりました。この系統は藤堂近江守良英の祖にあたるとされます。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_yoshinao", name:"多賀良直", house:"taga_todo", role:"忠高(良隆)の養子・八女の夫・良英の祖", yomi:"たが よしなお", certainty:"genealogy", note:"多賀豊後守忠高(『寛政重脩諸家譜』では高賢)の二男。通称は勝兵衛、のち将監と称しました。別名嘉房。藤堂忠高(良隆)の養子となり、忠高の八女を妻に迎えました。藤堂近江守良英の祖にあたるとされます。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"], unnamed:false},
+  {id:"taga_takakata", name:"多賀豊後守忠高", house:"taga", role:"良直(嘉房)の実父", yomi:"たが ただたか", certainty:"genealogy", note:"多賀将監良直(嘉房)の実父。『宗国史』では「忠高」、『寛政重脩諸家譜』では「高賢」と名が異なって伝わります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"taga_yoshikiyo", name:"藤堂良政(嘉清)", house:"todo_genba", role:"良直(嘉房)の子・藤堂玄蕃家初代", yomi:"たが よしまさ", certainty:"genealogy", note:"多賀将監良直(嘉房)の子。従五位下玄蕃頭。豊臣秀次に仕え、1万6000石を領しましたが、関ヶ原の役で戦死しました。『寛政重脩諸家譜』では「嘉清」と記されています。多賀良氏の子で忠高の養子となった同名の「多賀良政」(とらの兄)とは別人です。父・良直の代から藤堂姓を称しており、藤堂玄蕃家の初代にあたります。子孫は藤堂を名乗ります。子孫は●●家へ養子に出た系統がある模様ですが、詳細はまだ調査中のため、確認が取れ次第追記します。", sources:["藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"], unnamed:false},
+  {id:"asai_katsumasa", name:"浅井備前守亮政", house:"other", role:"とらの養父", yomi:"あざい すけまさ", certainty:"genealogy", note:"藤堂虎高の妻(とら)を養女に迎えた人物。『寛政重脩諸家譜』では「浅井備前守勝政」と記されています。とらの実の父は多賀良氏、養父は藤堂忠高(良隆)です。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"tora", name:"登羅(菟羅、妙清君)", house:"taga", unnamed:false, role:"高虎の母(実父は良氏、養父は忠高)", yomi:"とら", certainty:"genealogy", note:"藤堂虎高の妻、藤堂高虎の生母。『宗国史』によれば、実父は多賀良氏(通称新助、多賀忠高の弟)で、名は登羅(菟羅とも)、法号「妙清大禅定尼」。父・良氏が松尾山の戦いで戦死したため、兄の良政(新七郎)とともに伯父・多賀忠高(越州君・宗悦公、のちの藤堂忠高)のもとへ逃れ、その義子(養子)となりました。『寛政重脩諸家譜』の「浅井備前守勝政の養女で、実は藤堂越後守忠高の女」という記述は、この経緯を指すとみられます。", sources:["藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_torataka", name:"藤堂虎高", house:"todo", role:"高虎の父", yomi:"とうどう とらたか", certainty:"genealogy", note:"近江国犬上郡藤堂村の土豪。実父は三井出羽守乗綱、その次男として生まれました。若くして甲斐武田氏に仕え武田信虎から「虎」の偏諱を受けたと伝わります。近江に帰国後、藤堂忠高の婿養子となりました。長男・高則は早くに戦死し、次男の高虎に家督を譲りました。慶長4年(1599)、高虎の領地・伊予宇和島城で死去(享年84)。", sources:["Wikipedia「藤堂虎高」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","藤堂高文著ほか『宗国史』上,上野町教育会,昭和16.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1042162(参照 2026-09-06)"]},
+  {id:"todo_takanori", name:"藤堂高則", house:"todo", role:"高虎の兄・源七郎", yomi:"とうどう たかのり", certainty:"genealogy", note:"藤堂虎高の長男、藤堂高虎の兄。通称源七郎。伊勢国大河内城攻めの際に戦死したと『寛政重脩諸家譜』にあります(原本画像で確認)。早くに戦死したため、弟の高虎が若くして家督を継ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06、原本画像で確認)","Wikipedia「藤堂高虎」"]},
+  {id:"daughter_suzuki", name:"氏名不詳", house:"todo", unnamed:true, role:"虎高の娘・鈴木弥右衛門某室", certainty:"genealogy", note:"藤堂虎高の娘、藤堂高虎の姉妹。鈴木弥右衛門某に嫁いだと『寛政重脩諸家譜』にあります(原本画像で確認)。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06、原本画像で確認)"]},
+  {id:"todo_takatora", name:"藤堂高虎", house:"todo", role:"津藩初代藩主・築城三名人", yomi:"とうどう たかとら", trunk:true, protagonist:true, certainty:"genealogy", note:"弘治2年(1556)、近江国犬上郡藤堂村に生まれる。浅井長政、豊臣秀長、豊臣秀保、豊臣秀吉、徳川家康と主君を変え、伊予今治藩主を経て伊勢津藩初代藩主となりました。黒田孝高・加藤清正と並ぶ「築城三名人」の一人。寛永7年(1630)10月5日、江戸の藤堂藩邸にて死去(享年75)。", sources:["Wikipedia「藤堂高虎」"]},
+  {id:"miyazaki_shi", name:"氏名不詳(宮崎氏)", house:"other", unnamed:true, role:"虎高の妻・正高等の母", certainty:"genealogy", note:"宮崎氏。藤堂虎高の妻で、女子(山岡直則室、のち渡邊某室)・高清・正高・女子(藤堂良連室)の生母です。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"daughter_yamaoka", name:"氏名不詳", house:"todo", unnamed:true, role:"虎高の娘・山岡直則室、のち渡邊某室", certainty:"genealogy", note:"藤堂虎高の娘。母は宮崎氏。はじめ家臣・山岡長門直則に嫁ぎ、のち渡邊長兵衛某の妻となりました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takakiyo", name:"藤堂高清", house:"todo", role:"高虎の弟", yomi:"とうどう たかきよ", certainty:"genealogy", note:"藤堂虎高の子、藤堂高虎の弟。母は宮崎氏。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_masataka", name:"藤堂正高", house:"todo", role:"高虎の弟", yomi:"とうどう まさたか", certainty:"genealogy", note:"藤堂高虎の弟。母は宮崎氏。下総国で3000石を拝領していましたが、元和3年(1617)、これを津藩領に編入し、津藩の石高は32万3000石となりました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","Wikipedia「藤堂高虎」"]},
+  {id:"daughter_todo_yoshitsura", name:"氏名不詳", house:"todo", unnamed:true, role:"虎高の娘・藤堂良連室", certainty:"genealogy", note:"藤堂虎高の娘。母は宮崎氏。家臣・藤堂玄蕃良連に嫁ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"kyuhoin", name:"久芳院", house:"other", role:"高虎の正室・一色義直の娘", yomi:"きゅうほういん", certainty:"genealogy", note:"丹後国を治めた一色修理大夫義直の娘。天正9年(1581)、但馬平定に赴いた高虎と結婚しました。夫婦仲は非常に良かったものの、実子には恵まれませんでした。以心崇伝とは久芳院を通した親戚関係にあったと伝わります。元和2年(1616)頃没。", sources:["Wikipedia「藤堂高虎」"]},
+  {id:"shojuin", name:"松寿院(まつ)", house:"other", role:"高虎の継室・長連久の娘", yomi:"しょうじゅいん", certainty:"genealogy", note:"但馬国林甫城主・長越前守連久の二女。慶長4年(1599)、久芳院の勧めにより高虎の側室として迎えられ、のち継室となりました。高次・高重・亀姫・藤堂忠季室の生母です。慶安元年(1648)没。", sources:["Wikipedia「藤堂高虎」"]},
+  {id:"todo_takatsugu", name:"藤堂高次", house:"todo", role:"高虎の嫡男・津藩2代藩主", yomi:"とうどう たかつぐ", certainty:"genealogy", note:"藤堂高虎の嫡男(1602-1676)。『寛政重脩諸家譜』には母を「連久の女」(松寿院)と明記しています。高虎の跡を継ぎ、津藩2代藩主となりました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","Wikipedia「藤堂高虎」"]},
+  {id:"takatsugu_wife", name:"氏名不詳(平井徳右衛門の娘)", house:"other", unnamed:true, role:"高次の妻", certainty:"genealogy", note:"平井徳右衛門の娘。藤堂高次の妻で、Wikipedia「藤堂高睦」には高睦の生母として明記されています。他の子女についても同じ母である可能性がありますが、個別の裏付けはまだ確認できていません。", sources:["Wikipedia「藤堂高睦」"]},
+  {id:"todo_daughter1", name:"氏名不詳", house:"todo", unnamed:true, role:"高次の娘(1人目)", certainty:"genealogy", note:"藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_daughter2", name:"氏名不詳", house:"todo", unnamed:true, role:"高次の娘(2人目)", certainty:"genealogy", note:"藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takahisa", name:"藤堂高久", house:"todo", role:"高次の子・津藩3代藩主", yomi:"とうどう たかひさ", certainty:"genealogy", note:"藤堂高次の子。津藩3代藩主。寛文9年(1669)に家督を継ぎ、弟の高通に5万石(伊勢国久居藩)、高堅に3000石を分与しました。善政で知られ、『土芥寇讎記』にも高く評価されています。嗣子がなく、弟の高睦を養嗣子としました。", sources:["Wikipedia「藤堂高久」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takamichi", name:"藤堂高通", house:"todo", role:"高次の子・久居藩祖", yomi:"とうどう たかみち", certainty:"genealogy", note:"藤堂高次の子。寛文9年(1669)、兄・高久より5万石を分与され、伊勢国久居藩を立藩しました。久居藩藤堂家の祖です。", sources:["Wikipedia「藤堂氏」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takakata", name:"藤堂高堅", house:"todo", role:"高次の子", yomi:"とうどう たかかた", certainty:"genealogy", note:"藤堂高次の子。寛文9年(1669)、兄・高久より3000石を分与されました。", sources:["Wikipedia「藤堂氏」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_daughter3", name:"氏名不詳", house:"todo", unnamed:true, role:"高次の娘(3人目)", certainty:"genealogy", note:"藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_daughter4", name:"氏名不詳", house:"todo", unnamed:true, role:"高次の娘(4人目)", certainty:"genealogy", note:"藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_mototsune", name:"藤堂基恒", house:"todo", role:"高次の子", yomi:"とうどう もとつね", certainty:"genealogy", note:"藤堂高次の子。『寛政重脩諸家譜』第5輯に記載があります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_daughter5", name:"氏名不詳", house:"todo", unnamed:true, role:"高次の娘(5人目)", certainty:"genealogy", note:"藤堂高次の娘。『寛政重脩諸家譜』第5輯に記載があります。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takachika", name:"藤堂高睦", house:"todo", role:"高次の子・高久の養子・津藩4代藩主", yomi:"とうどう たかちか", certainty:"genealogy", note:"藤堂高次の子。母は平井徳右衛門の娘。貞享2年(1685)、兄で3代藩主の高久に嗣子がなかったため養嗣子となり、元禄16年(1703)の高久死去にともない津藩4代藩主となりました。2男1女があったがいずれも早世し、跡は久居藩から迎えた養嗣子・高敏が継ぎました。", sources:["Wikipedia「藤堂高睦」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takatoshi", name:"藤堂高敏", house:"todo", role:"高睦の養子・津藩5代藩主", yomi:"とうどう たかとし", certainty:"genealogy", note:"久居藩初代藩主・藤堂高通の三男。藤堂高次の孫にあたります。高睦の2人の男子がいずれも早世したため、宝永2年(1705)に高睦の養嗣子となり、宝永5年(1709)、高睦の死去により津藩5代藩主となりました。享保13年(1728)、疱瘡により死去し、嗣子がなかったため久居藩主・高治が跡を継ぎました。", sources:["Wikipedia「藤堂高敏」"]},
+  {id:"todo_takaharu", name:"藤堂高治", house:"todo", role:"高陳の養子・高敏の養子・津藩6代藩主", yomi:"とうどう たかはる", certainty:"genealogy", note:"藤堂出雲家3代・藤堂高明の四男。藤堂高虎の弟・高清を祖とする一門の出身で、高清の曾孫にあたります。享保8年(1723)、久居藩4代藩主・高陳が隠居する際、嗣子がなかったためその養嗣子となり久居藩を継ぎました。享保13年(1728)、本家の津藩主・高敏にも嗣子がなかったため、重ねてその養嗣子となって津藩6代藩主を継ぎました。", sources:["Wikipedia「藤堂高治」"]},
+  {id:"todo_takanobu", name:"藤堂高陳", house:"todo", role:"高堅の子・久居藩4代藩主", yomi:"とうどう たかのぶ", certainty:"genealogy", note:"藤堂高堅の子。久居藩4代藩主。嗣子がなかったため、藤堂出雲家の高治を養嗣子に迎えました。", sources:["Wikipedia「藤堂高治」"]},
+  {id:"todo_takatoyo", name:"藤堂高豊(高朗)", house:"todo", role:"高治の甥・養子・久居藩5代藩主", yomi:"とうどう たかとよ", certainty:"genealogy", note:"藤堂高治の甥。享保13年(1728)、高治が津藩本家を継いだ際、久居藩の家督は甥で養嗣子の高豊(のちの高朗)が継ぎました。", sources:["Wikipedia「藤堂高治」"]},
+  {id:"todo_takashige", name:"藤堂高重", house:"todo", role:"高虎の次男", yomi:"とうどう たかしげ", certainty:"genealogy", note:"藤堂高虎の次男、通称佐兵衛佐。『寛政重脩諸家譜』には母を「高次と同じ」(松寿院)と明記しています。寛永8年(1631)、26歳で死去し、子孫はありません。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","Wikipedia「藤堂高虎」"]},
+  {id:"kamehime", name:"亀姫", house:"todo", role:"高虎の娘・蒲生忠郷正室、のち専修寺尭朝室", yomi:"かめひめ", certainty:"genealogy", note:"藤堂高虎の娘(1608-1660)。母は松寿院(連久の女)。『寛政重脩諸家譜』では最初の夫を「松平下野守忠卿」と記していますが、これは徳川家から松平姓を与えられた会津藩主・蒲生忠郷を指すとみられます。忠郷の死後は伊勢国一身田専修寺の尭朝に嫁ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","Wikipedia「藤堂高虎」"]},
+  {id:"gamou_tadasato", name:"蒲生忠郷(松平忠郷)", house:"other", role:"亀姫の最初の夫・会津藩主", yomi:"がもう たださと", certainty:"genealogy", note:"陸奥会津藩主。徳川家から松平姓を与えられており、『寛政重脩諸家譜』の「松平下野守忠郷」はこの忠郷を指すとみられます。藤堂高虎の娘・亀姫を正室に迎えました。嗣子なく没し、蒲生家は改易されました。", sources:["Wikipedia「藤堂高虎」","『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"daughter_tadasue", name:"氏名不詳", house:"todo", unnamed:true, role:"高虎の娘・藤堂忠季室(母は某氏)", certainty:"genealogy", note:"藤堂高虎の娘。『寛政重脩諸家譜』には母を「某氏」とのみ記し、松寿院とは別の母とされています。家臣・藤堂作兵衛忠季に嫁ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"todo_takayoshi", name:"藤堂高吉", house:"niwa", role:"高虎の養子・丹羽長秀の三男", yomi:"とうどう たかよし", certainty:"genealogy", note:"丹羽長秀の三男(1579-1670)。豊臣秀長の養子となったのち、実子のいなかった高虎の養子となりました。慶長6年(1601)に高虎の実子・高次が生まれたことで後継の地位を失い、家臣となりました。のち伊賀名張に移封され、名張藤堂家の祖となりました。", sources:["Wikipedia「藤堂高虎」","Wikipedia「藤堂高吉」"]},
+  {id:"daughter_ikoma", name:"氏名不詳", house:"other", unnamed:true, role:"高虎の養女・生駒正俊室(実父は氏家源左衛門)", certainty:"genealogy", note:"高虎の養女。実父は氏家源左衛門某。『寛政重脩諸家譜』には「母不明」と記されています。讃岐高松藩主・生駒讃岐守正俊に嫁ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)"]},
+  {id:"ikoma_masatoshi", name:"生駒正俊", house:"other", role:"高虎の養女婿・高松藩主", yomi:"いこま まさとし", certainty:"genealogy", note:"讃岐高松藩主。藤堂高虎の養女(実父は氏家源左衛門)を正室に迎えました。", sources:["Wikipedia「藤堂高虎」"]},
+  {id:"daughter_todo_takanori2", name:"氏名不詳", house:"other", unnamed:true, role:"高虎の養女・藤堂高刑室(実父は松永伊勢守某)", certainty:"genealogy", note:"高虎の養女。『寛政重脩諸家譜』には実父を松永伊勢守某と明記しています。Wikipediaでは実父を「織田信清」とする異説もありますが、原本の記載を優先します。家臣・藤堂仁右衛門高刑に嫁ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","Wikipedia「藤堂高虎」"]},
+  {id:"todo_takanori2", name:"藤堂高刑", house:"other", role:"高虎の養女婿・一族", yomi:"とうどう たかのり", certainty:"genealogy", note:"藤堂一族。高虎の養女を妻に迎えました。大坂夏の陣・八尾の戦いで戦死しています。", sources:["Wikipedia「藤堂高虎」"]},
+  {id:"daughter_kobori", name:"氏名不詳", house:"other", unnamed:true, role:"高虎の養女・小堀政一室(実父は藤堂良政/嘉清)", certainty:"genealogy", note:"高虎の養女。『寛政重脩諸家譜』によれば実父は藤堂玄蕃頭嘉清です(以前は「藤堂良政」としていましたが、原本記載により訂正しました)。役職・名前(玄蕃頭・嘉清)が一致することから、多賀将監良直(嘉房)の子・藤堂良政(嘉清)と同一人物とみられます。茶人としても知られる小堀遠江守政一(遠州)に嫁ぎました。", sources:["『寛政重脩諸家譜』第5輯,國民圖書,1923.国立国会図書館デジタルコレクション https://dl.ndl.go.jp/pid/1082718(参照 2026-09-06)","Wikipedia「藤堂高虎」"]},
+  {id:"kobori_masakazu", name:"小堀政一(遠州)", house:"other", role:"高虎の養女婿・茶人", yomi:"こぼり まさかず", certainty:"genealogy", note:"江戸時代初期の大名・茶人(小堀遠州)。藤堂高虎の養女(実父は藤堂玄蕃頭嘉清)を正室に迎えました。", sources:["Wikipedia「藤堂高虎」"]},
+];
+
+const parentEdges = [
+  ["todo_tadataka","todo_torataka","岳父(婿養子)","adoption"],
+  ["todo_torataka","todo_takanori","父","blood"],
+  ["todo_tadataka","tora","養父","adoption"],
+  ["taga_yoshinari","tora","父","blood"],
+  ["todo_tadataka","todo_tadataka_daughter7","父","blood"],
+  ["todo_tadataka","todo_tadataka_daughter8","父","blood"],
+  ["todo_tadataka","todo_yoshimasa2","養父","adoption"],
+  ["taga_yoshinari","todo_yoshimasa2","父","blood"],
+  ["todo_yoshimasa2","todo_yoshikatsu","父","blood"],
+  ["todo_tadataka","todo_yoshinao","養父","adoption"],
+  ["taga_father","taga_takakata","父","blood"],
+  ["taga_father","taga_yoshinari","父","blood"],
+  ["taga_takakata","todo_yoshinao","父","blood"],
+  ["todo_yoshinao","taga_yoshikiyo","父","blood"],
+  ["mitsui_noritsuna2","todo_torataka","父","blood"],
+  ["asai_katsumasa","tora","養父","adoption"],
+  ["todo_torataka","daughter_suzuki","父","blood"],
+  ["todo_torataka","todo_takatora","父","blood"],
+  ["tora","todo_takatora","母","blood"],
+  ["todo_torataka","todo_masataka","父","blood"],
+  ["miyazaki_shi","todo_masataka","母","blood"],
+  ["todo_torataka","daughter_yamaoka","父","blood"],
+  ["miyazaki_shi","daughter_yamaoka","母","blood"],
+  ["todo_torataka","todo_takakiyo","父","blood"],
+  ["miyazaki_shi","todo_takakiyo","母","blood"],
+  ["todo_torataka","daughter_todo_yoshitsura","父","blood"],
+  ["miyazaki_shi","daughter_todo_yoshitsura","母","blood"],
+  ["shojuin","todo_takatsugu","母","blood"],
+  ["todo_takatora","todo_takatsugu","父","blood"],
+  ["todo_takatsugu","todo_daughter1","父","blood"],
+  ["todo_takatsugu","todo_daughter2","父","blood"],
+  ["todo_takatsugu","todo_takahisa","父","blood"],
+  ["todo_takatsugu","todo_takamichi","父","blood"],
+  ["todo_takatsugu","todo_takakata","父","blood"],
+  ["todo_takamichi","todo_takatoshi","父","blood"],
+  ["todo_takamichi","todo_takakata","養父","adoption"],
+  ["todo_takakata","todo_takanobu","父","blood"],
+  ["todo_takanobu","todo_takaharu","養父","adoption"],
+  ["todo_takaharu","todo_takatoyo","養父","adoption"],
+  ["todo_takatsugu","todo_daughter3","父","blood"],
+  ["todo_takatsugu","todo_daughter4","父","blood"],
+  ["todo_takatsugu","todo_mototsune","父","blood"],
+  ["todo_takatsugu","todo_daughter5","父","blood"],
+  ["todo_takatsugu","todo_takachika","父","blood"],
+  ["todo_takahisa","todo_takachika","養父","adoption"],
+  ["todo_takachika","todo_takatoshi","養父","adoption"],
+  ["todo_takatoshi","todo_takaharu","養父","adoption"],
+  ["todo_takatora","todo_takashige","父","blood"],
+  ["shojuin","todo_takashige","母","blood"],
+  ["todo_takatora","kamehime","父","blood"],
+  ["shojuin","kamehime","母","blood"],
+  ["todo_takatora","daughter_tadasue","父","blood"],
+  ["todo_takatora","todo_takayoshi","養父","adoption"],
+  ["todo_takatora","daughter_ikoma","養父","adoption"],
+  ["todo_takatora","daughter_todo_takanori2","養父","adoption"],
+  ["todo_takatora","daughter_kobori","養父","adoption"],
+  ["taga_yoshikiyo","daughter_kobori","父","blood"],
+];
+const spouseEdges = [
+  ["todo_tadataka_daughter7","todo_yoshimasa2","婚姻","marriage"],
+  ["todo_tadataka_daughter8","todo_yoshinao","婚姻","marriage"],
+  ["todo_takatsugu","takatsugu_wife","婚姻","marriage"],
+  ["todo_takatora","kyuhoin","正室","marriage"],
+  ["todo_takatora","shojuin","継室","marriage"],
+  ["kamehime","gamou_tadasato","婚姻","marriage"],
+  ["daughter_ikoma","ikoma_masatoshi","婚姻","marriage"],
+  ["daughter_todo_takanori2","todo_takanori2","婚姻","marriage"],
+  ["daughter_kobori","kobori_masakazu","婚姻","marriage"],
+];
+
+/* house(家)ごとの色とラベル。系図に登場する家の数だけ増やす。
+   "other" は「所属家不明・記録不詳」の人物用に必ず残しておく。 */
+const houseColors = { todo:"#2b2f2d", niwa:"#5c6b62", taga:"#8a6d3b", taga_todo:"#6b7a4d", todo_genba:"#4a6b8a", todo_shinshichiro:"#8a4a6b", other:"#a19c8e" };
+const houseLabels = { todo:"藤堂家", niwa:"丹羽家", taga:"多賀家", taga_todo:"多賀家・藤堂家", todo_genba:"藤堂玄蕃家", todo_shinshichiro:"藤堂新七郎家", other:"記録不詳" };
+const certaintyMeta = {
+  genealogy:{label:"系譜類に記載", color:"#5c6b62"},
+  uncertain:{label:"諸説・要検討", color:"#9c5040"},
+  unknown:{label:"氏名・出自不詳", color:"#a19c8e"},
+};
+
+/* =========================================================================
+   自動レイアウトエンジン
+   1) 親子関係だけをたどった「最長経路」で世代(段)を決める
+   2) 配偶者(spouseEdges)どうしは同じ段にそろえる(値の大きい方に合わせる)
+   3) 上記を安定するまで繰り返す(親→子、配偶者の同段化、を交互に反映)
+   4) ルート(親のいない人)から子へ向かって配偶者をまとめながら順番に並べ、
+      左右位置の初期値を決める
+   5) 下の段から上の段へ向かって「子どもたちの平均位置」に親を寄せ、
+      重なった場合は横に押し出して間隔を確保する
+   ========================================================================= */
+const ROW_H = 270, COL_W = 230, SPOUSE_GAP = 210;
+
+function computeLayout(nodes, parentEdges, spouseEdges){
+  const ids = nodes.map(n=>n.id);
+  const nodeByIdLocal = Object.fromEntries(nodes.map(n=>[n.id,n]));
+  const trunkNodeForHouse = nodes.find(n=>n.trunk);
+  const TRUNK_HOUSE = trunkNodeForHouse ? trunkNodeForHouse.house : (nodes[0] && nodes[0].house);
+  const parentsOf = {}, childrenOf = {};
+  ids.forEach(id=>{ parentsOf[id]=[]; childrenOf[id]=[]; });
+  parentEdges.forEach(([p,c])=>{ parentsOf[c].push(p); childrenOf[p].push(c); });
+
+  // 配偶者クラスタ(Union-Find)
+  const uf = {}; ids.forEach(id=>uf[id]=id);
+  function find(x){ while(uf[x]!==x){ uf[x]=uf[uf[x]]; x=uf[x]; } return x; }
+  function union(a,b){ const ra=find(a), rb=find(b); if(ra!==rb) uf[ra]=rb; }
+  spouseEdges.forEach(([a,b])=>union(a,b));
+  const pairGap = {};
+  spouseEdges.forEach(([a,b,,,gap])=>{ if(gap){ pairGap[a+"|"+b]=gap; pairGap[b+"|"+a]=gap; } });
+  const clusters = {};
+  ids.forEach(id=>{ const r=find(id); (clusters[r]=clusters[r]||[]).push(id); });
+  const clusterOf = {}; ids.forEach(id=>{ clusterOf[id]=find(id); });
+
+  // 世代(段)を緩和法で決定
+  const rank = {}; ids.forEach(id=>rank[id]=0);
+  for(let iter=0; iter<ids.length+5; iter++){
+    let changed=false;
+    parentEdges.forEach(([p,c])=>{ if(rank[c] < rank[p]+1){ rank[c]=rank[p]+1; changed=true; } });
+    Object.values(clusters).forEach(members=>{
+      const m = Math.max(...members.map(id=>rank[id]));
+      members.forEach(id=>{ if(rank[id] < m){ rank[id]=m; changed=true; } });
+    });
+    if(!changed) break;
+  }
+  // 親を持たない人(ルート)は0段目のままになりがちだが、その子がずっと深い段にいる場合、
+  // 子のすぐ上の段まで引き上げる(親子のカードが遠く離れすぎるのを防ぐ)。
+  ids.forEach(id=>{
+    if(parentsOf[id].length > 0) return;
+    const childRanks = childrenOf[id].map(c=>rank[c]);
+    if(childRanks.length === 0) return;
+    const desired = Math.min(...childRanks) - 1;
+    if(desired > rank[id]) rank[id] = desired;
+  });
+  // 引き上げた分の整合性を取るため、緩和法をもう一度流す(配偶者クラスタの段も揃え直す)
+  for(let iter=0; iter<ids.length+5; iter++){
+    let changed=false;
+    parentEdges.forEach(([p,c])=>{ if(rank[c] < rank[p]+1){ rank[c]=rank[p]+1; changed=true; } });
+    Object.values(clusters).forEach(members=>{
+      const m = Math.max(...members.map(id=>rank[id]));
+      members.forEach(id=>{ if(rank[id] < m){ rank[id]=m; changed=true; } });
+    });
+    if(!changed) break;
+  }
+  // 兄弟姉妹(同じ親を持つ子)は、配偶者の血筋の深さに引きずられて段がバラバラにならないよう
+  // そろえる。ただし反復させると無限増大の恐れがあるため、1回だけ・浅い方を深い方へ
+  // 引き上げる形で適用する(その後の「子は親より下」チェックが整合性を保証する)。
+  {
+    const siblingGroups = {};
+    parentEdges.forEach(([p,c])=>{ (siblingGroups[p] = siblingGroups[p]||[]).push(c); });
+    Object.values(siblingGroups).forEach(members=>{
+      const m = Math.max(...members.map(id=>rank[id]));
+      members.forEach(id=>{ rank[id] = m; });
+    });
+  }
+
+  // 1) 各クラスタの「メンバー順」と「先頭メンバーからのオフセット」「子ID一覧」を先に確定する
+  const clusterOrder = {}, clusterOffsets = {}, clusterChildIds = {};
+  const alignWith = {};
+  nodes.forEach(n=>{ if(n.alignWith) alignWith[n.id] = n.alignWith; });
+  const leafRoots = [];
+  const setupVisited = new Set();
+  function setupCluster(startId){
+    const root = clusterOf[startId];
+    if(setupVisited.has(root)) return;
+    setupVisited.add(root);
+    const members = clusters[root].slice();
+    members.sort((a,b)=> (a===startId? -1 : b===startId?1:0));
+    clusterOrder[root] = members;
+    const offsets=[0];
+    for(let j=1;j<members.length;j++){
+      const gap = pairGap[members[j-1]+"|"+members[j]] || SPOUSE_GAP;
+      offsets.push(offsets[j-1]+gap);
+    }
+    clusterOffsets[root] = offsets;
+    const childIds = [];
+    members.forEach(m=> childrenOf[m].forEach(c=>{ if(!childIds.includes(c)) childIds.push(c); }));
+    clusterChildIds[root] = childIds;
+    if(childIds.length===0) leafRoots.push(root);
+    childIds.forEach(c=> setupCluster(c));
+  }
+  nodes.forEach(n=>{ if(parentsOf[n.id].length===0) setupCluster(n.id); });
+  nodes.forEach(n=>{ if(!setupVisited.has(clusterOf[n.id])) setupCluster(n.id); });
+
+  // 2) 子を持たない人(葉)を、家系図をたどる順番のまま横に並べ、基準となる位置を与える
+  const anchorX = {};
+  let cursor = 0;
+  leafRoots.forEach(root=>{
+    anchorX[root] = cursor;
+    cursor += clusterOffsets[root][clusterOffsets[root].length-1] + COL_W;
+  });
+
+  // 3) 子を持つ人の位置を、子どもたちの重心の真上になるよう計算する。
+  //    「重なり解消(4)」で子の位置がずれることがあるため、3→4を数回繰り返して収束させる。
+  function memberX(root, id){ return anchorX[root] + clusterOffsets[root][clusterOrder[root].indexOf(id)]; }
+  const nonLeafRoots = Object.keys(clusterOrder)
+    .filter(root=> clusterChildIds[root].length>0)
+    .sort((a,b)=> rank[clusterOrder[b][0]] - rank[clusterOrder[a][0]]); // 深い世代(子側)から先に処理
+
+  function recomputeNonLeafAnchors(){
+    nonLeafRoots.forEach(root=>{
+      const members = clusterOrder[root];
+      const alignTarget = members.map(m=>alignWith[m]).find(Boolean);
+      let avg;
+      if(alignTarget && clusterOf[alignTarget] !== undefined){
+        avg = memberX(clusterOf[alignTarget], alignTarget); // 子孫の重心の代わりに、指定された特定の子孫とx座標を揃える
+      } else {
+        const childXs = clusterChildIds[root].map(id=> memberX(clusterOf[id], id));
+        avg = childXs.reduce((a,b)=>a+b,0)/childXs.length;
+      }
+      const offsets = clusterOffsets[root];
+      const centroidOffset = offsets.reduce((a,b)=>a+b,0)/offsets.length;
+      anchorX[root] = avg - centroidOffset;
+    });
+  }
+
+  // 4) 同じ段(世代)の中で重なっているクラスタだけを、位置が近い順に並べて間隔を確保する
+  function resolveOverlaps(){
+    const byRank = {};
+    Object.keys(clusterOrder).forEach(root=>{
+      const r = rank[clusterOrder[root][0]];
+      (byRank[r] = byRank[r]||[]).push(root);
+    });
+    Object.values(byRank).forEach(roots=>{
+      roots.sort((a,b)=> anchorX[a]-anchorX[b]);
+      for(let i=1;i<roots.length;i++){
+        const prevRoot=roots[i-1], curRoot=roots[i];
+        const prevRight = anchorX[prevRoot] + clusterOffsets[prevRoot][clusterOffsets[prevRoot].length-1];
+        const curLeft = anchorX[curRoot];
+        if(curLeft - prevRight < COL_W){
+          anchorX[curRoot] += COL_W - (curLeft - prevRight);
+        }
+      }
+    });
+  }
+
+  for(let iter=0; iter<8; iter++){
+    recomputeNonLeafAnchors();
+    resolveOverlaps();
+  }
+
+  // 5) 各段(世代)ごとに、直系(trunk)を中心に配置し直す。
+  //    ・配偶者はクラスタとして直系にすでに隣接しているが、複数いる場合は上下にもずらす
+  //    ・同じ家に留まる兄弟姉妹は、直系の左右にバランスよく交互配置し、上下にもずらす
+  //    ・他家へ嫁いだ・養子に出た人物は、行き先の家ごとにまとまりを作りつつ、さらに外側へ配置する
+  const nodeX = {}, nodeY = {};
+  const rootsByRank = {};
+  Object.keys(clusterOrder).forEach(root=>{
+    const r = rank[clusterOrder[root][0]];
+    (rootsByRank[r] = rootsByRank[r]||[]).push(root);
+  });
+  const JITTER = ROW_H * 0.22, GAP_INNER = COL_W * 1.05, GAP_OUTER = COL_W * 0.9;
+
+  function clusterWidth(root){ const o=clusterOffsets[root]; return o[o.length-1]; }
+  function clusterAnchorMember(root){
+    const members = clusterOrder[root];
+    return members.find(m=> nodeByIdLocal[m] && nodeByIdLocal[m].trunk) || members[0];
+  }
+  function clusterIsTrunkHouse(root){
+    return clusterOrder[root].some(m=> nodeByIdLocal[m] && nodeByIdLocal[m].house === TRUNK_HOUSE);
+  }
+  function clusterJoinedHouse(root){
+    const tagged = clusterOrder[root].map(m=> nodeByIdLocal[m] && nodeByIdLocal[m].joinedHouse).find(Boolean);
+    return tagged || null;
+  }
+  function clusterGroupKey(root){
+    // 明示的に「他家へ出た」印があればそれを使う。
+    // 血縁がそもそも主題の家でない場合(たまたま同じ段になっただけの別系統)は、
+    // その人自身の家をグループキーとして扱う。血縁が主題の家のまま残る場合のみ null(留まる兄弟)。
+    const joined = clusterJoinedHouse(root);
+    if(joined) return joined;
+    if(!clusterIsTrunkHouse(root)){
+      const first = nodeByIdLocal[clusterOrder[root][0]];
+      return (first && first.house) || "other";
+    }
+    return null;
+  }
+
+  const groupSideMemory = {}; // 家グループ(joinedHouse等)ごとに割り当てた左右を覚えておき、世代をまたいで揃える
+  const finalizedRanks = new Set();
+
+  // 直系(trunk)が実際にどの段にいるかを求め、そこから近い段の順に処理する。
+  // これにより「直系のいる段(常にx=0中心)」と「直系のいない段(先祖・子孫)」の
+  // 基準がずれず、隣の段とのつながりを頼りに全体を秀吉中心にそろえられる。
+  const anyTrunkId = ids.find(id=> nodeByIdLocal[id] && nodeByIdLocal[id].trunk);
+  const trunkRankValue = anyTrunkId!==undefined ? rank[anyTrunkId] : 0;
+  const orderedRanks = Object.keys(rootsByRank).map(Number)
+    .sort((a,b)=> Math.abs(a-trunkRankValue) - Math.abs(b-trunkRankValue));
+
+  orderedRanks.forEach(r=>{
+    const roots = rootsByRank[r].slice();
+    const trunkRoot = roots.find(root=> clusterOrder[root].some(m=> nodeByIdLocal[m] && nodeByIdLocal[m].trunk));
+
+    if(!trunkRoot){
+      // 直系がいない段(祖先や子孫の段)も、x=0から詰め直すのではなく、
+      // 緩和法で計算済みの重心(anchorX)の中心を保ったまま並べ直す。
+      roots.sort((a,b)=> anchorX[a]-anchorX[b]);
+      const totalWidth = roots.reduce((sum,root)=> sum + clusterWidth(root) + COL_W, -COL_W);
+      const origLeft = Math.min(...roots.map(root=> anchorX[root]));
+      const origRight = Math.max(...roots.map(root=> anchorX[root] + clusterWidth(root)));
+      const origCenter = (origLeft + origRight) / 2;
+      let curX = origCenter - totalWidth/2;
+      roots.forEach(root=>{
+        clusterOrder[root].forEach((m,j)=>{ nodeX[m]=curX+clusterOffsets[root][j]; nodeY[m]=r*ROW_H; });
+        curX += clusterWidth(root)+COL_W;
+      });
+      // 同じ段に複数の無関係な系統(例:主人公の実家と、配偶者の実家)が混在することがあるため、
+      // 段全体をまとめて動かすのではなく、系統(クラスタ)ごとに個別へ、直系に一段近い側の
+      // 段とのつながりを探してそろえる。つながりが無いクラスタは、他とぶつからない範囲で
+      // そのままにする。
+      // 直系(秀吉)を含む段を基準(距離0)として処理しているため、まだ確定していない段の
+      // 相手は無視し、既に確定済みの段にいる相手だけを対象に、つながる全員の平均位置へ
+      // クラスタの中心を合わせる。子(または親)が複数の異なる段に分かれている場合もあるため、
+      // 「隣の段」に限らず、確定済みの段ならどこでも対象にする。
+      roots.forEach(root=>{
+        const relatedXs = [];
+        clusterOrder[root].forEach(mid=>{
+          const relatedIds = [...(childrenOf[mid]||[]), ...(parentsOf[mid]||[])];
+          relatedIds.forEach(relId=>{
+            if(finalizedRanks.has(rank[relId]) && nodeX[relId] !== undefined) relatedXs.push(nodeX[relId]);
+          });
+        });
+        if(relatedXs.length){
+          const targetX = relatedXs.reduce((a,b)=>a+b,0) / relatedXs.length;
+          const clusterMemberXs = clusterOrder[root].map(mid=>nodeX[mid]);
+          const clusterCenter = (Math.min(...clusterMemberXs) + Math.max(...clusterMemberXs)) / 2;
+          const offset = targetX - clusterCenter;
+          clusterOrder[root].forEach(mid=>{ nodeX[mid] += offset; });
+        }
+      });
+      {
+        // 個別にずらした結果、同じ段の中で近づきすぎたクラスタがあれば軽く押し出す
+        const sortedRoots = roots.slice().sort((a,b)=> nodeX[clusterOrder[a][0]] - nodeX[clusterOrder[b][0]]);
+        for(let i=1;i<sortedRoots.length;i++){
+          const prev = sortedRoots[i-1], cur = sortedRoots[i];
+          const prevRight = Math.max(...clusterOrder[prev].map(mid=>nodeX[mid])) + COL_W*0.5;
+          const curLeftMembers = clusterOrder[cur];
+          const curLeftBase = Math.min(...curLeftMembers.map(mid=>nodeX[mid]));
+          if(curLeftBase < prevRight){
+            const push = prevRight - curLeftBase;
+            curLeftMembers.forEach(mid=>{ nodeX[mid] += push; });
+          }
+        }
+      }
+      finalizedRanks.add(r);
+      return;
+    }
+
+    const others = roots.filter(root=> root!==trunkRoot);
+    const stayers = others.filter(root=> clusterGroupKey(root)===null).sort((a,b)=> anchorX[a]-anchorX[b]);
+    const leavers = others.filter(root=> clusterGroupKey(root)!==null);
+    const leaverGroups = {};
+    leavers.forEach(root=>{ (leaverGroups[clusterGroupKey(root)] = leaverGroups[clusterGroupKey(root)]||[]).push(root); });
+    Object.values(leaverGroups).forEach(g=> g.sort((a,b)=> anchorX[a]-anchorX[b]));
+
+    // 直系クラスタ自身(配偶者含む)を中央に据える。配偶者が複数いれば上下にずらす。
+    const trunkMembers = clusterOrder[trunkRoot];
+    const trunkOffsets = clusterOffsets[trunkRoot];
+    const trunkAnchorIdx = trunkMembers.indexOf(clusterAnchorMember(trunkRoot));
+    const centerOffset = trunkOffsets[trunkAnchorIdx];
+    trunkMembers.forEach((m,j)=>{
+      nodeX[m] = trunkOffsets[j] - centerOffset;
+      nodeY[m] = (j===trunkAnchorIdx) ? r*ROW_H : r*ROW_H + (j%2===0 ? -JITTER : JITTER);
+    });
+
+    let leftCursor = Math.min(...trunkMembers.map(m=>nodeX[m])) - GAP_INNER;
+    let rightCursor = Math.max(...trunkMembers.map(m=>nodeX[m])) + GAP_INNER;
+    let toggle = 0, jitterToggle = 0;
+
+    function placeOnSide(root, isLeft, gapExtra, useJitter){
+      const w = clusterWidth(root), offsets = clusterOffsets[root];
+      const baseX = isLeft ? (leftCursor - w) : rightCursor;
+      const yOff = useJitter ? (jitterToggle%2===0 ? -JITTER : JITTER) : 0;
+      clusterOrder[root].forEach((m,j)=>{ nodeX[m] = baseX + offsets[j]; nodeY[m] = r*ROW_H + yOff; });
+      jitterToggle++;
+      if(isLeft){ leftCursor = baseX - gapExtra; } else { rightCursor = baseX + w + gapExtra; }
+    }
+
+    // 留まる兄弟姉妹をバランスよく左右交互に(斜め上下のジッター付き)
+    stayers.forEach(root=>{ placeOnSide(root, toggle%2===0, COL_W, true); toggle++; });
+
+    // 他家へ出た人物は、行き先の家ごとにまとめて、さらに外側へ配置する。
+    // 同じ家は世代をまたいでも同じ側になるよう、一度決めた左右を記憶して使い回す。
+    const leaverKeys = Object.keys(leaverGroups).sort();
+    leaverKeys.forEach(key=>{
+      const group = leaverGroups[key];
+      let isLeft;
+      if(groupSideMemory[key] !== undefined){
+        isLeft = groupSideMemory[key];
+      } else {
+        isLeft = toggle%2===0;
+        groupSideMemory[key] = isLeft;
+      }
+      group.forEach((root,gi)=> placeOnSide(root, isLeft, gi===group.length-1 ? GAP_OUTER : COL_W, false));
+      toggle++;
+    });
+    finalizedRanks.add(r);
+  });
+
+  // compactBranch:true を付けた人物の子孫は、世代(段)にとらわれず近くにまとめて配置する。
+  // 見やすさを優先する小さな分家(宮家など)向けの機能。配偶者クラスタ単位で動かすことで、
+  // 夫婦が離れ離れにならないようにする。他の配置とぶつからないよう、
+  // 動かした人物どうしの重なりだけ簡易的に押し出して解消する。
+  // 間隔は人物ごとに調整可能:
+  //   compactSpacingX … 横方向の間隔の倍率(既定 1.4。混み合う場合は大きく、余裕があれば小さく)
+  //   compactGapY      … 縦方向の間隔の倍率(既定 0.55。段の高さに対する割合)
+  const movedIds = new Set();
+  nodes.filter(n=>n.compactBranch).forEach(founder=>{
+    const founderCluster = clusterOf[founder.id];
+    const fx = nodeX[founder.id], fy = nodeY[founder.id];
+    let frontierClusters = [founderCluster];
+    const visitedClusters = new Set([founderCluster]);
+    const spacingX = COL_W * (founder.compactSpacingX!=null ? founder.compactSpacingX : 1.4);
+    const SMALL_GAP = ROW_H * (founder.compactGapY!=null ? founder.compactGapY : 0.55);
+    let depth = 0;
+    while(true){
+      depth++;
+      const nextClusters = [];
+      const seenThisLevel = new Set();
+      frontierClusters.forEach(fc=>{
+        (clusters[fc]||[]).forEach(memberId=>{
+          (childrenOf[memberId]||[]).forEach(childId=>{
+            const cc = clusterOf[childId];
+            if(!visitedClusters.has(cc) && !seenThisLevel.has(cc)){
+              seenThisLevel.add(cc); nextClusters.push(cc); visitedClusters.add(cc);
+            }
+          });
+        });
+      });
+      if(nextClusters.length===0) break;
+      const y = fy + SMALL_GAP*depth;
+      // 直系(trunk)を含むクラスタは、他の論理で既に正しく配置されているので動かさない。
+      // かつ、そこから先(その子孫)へは探索を打ち切る(でないと、直系の子孫まで
+      // このコンパクト化に巻き込まれ、誤った浅い位置に配置されてしまう)。
+      const prunedClusters = nextClusters.filter(cc=>{
+        const members = clusterOrder[cc] || [cc];
+        return !members.some(mid=> nodeByIdLocal[mid] && nodeByIdLocal[mid].trunk);
+      });
+      prunedClusters.forEach((cc,i2)=>{
+        let offset;
+        if(founder.compactSide === 'left'){
+          offset = -(i2+1) * spacingX;
+        } else if(founder.compactSide === 'right'){
+          offset = (i2+1) * spacingX;
+        } else {
+          offset = (i2 - (prunedClusters.length-1)/2) * spacingX;
+        }
+        const members = clusterOrder[cc] || [cc];
+        const offsets = clusterOffsets[cc] || [0];
+        members.forEach((mid,j)=>{
+          nodeX[mid] = fx + offset + (offsets[j]||0);
+          nodeY[mid] = y;
+          movedIds.add(mid);
+        });
+      });
+      frontierClusters = prunedClusters;
+    }
+  });
+  if(movedIds.size){
+    const CARD_W = COL_W*0.9, CARD_H = ROW_H*0.36;
+    for(let iter=0; iter<15; iter++){
+      let moved=false;
+      for(let i=0;i<ids.length;i++){
+        for(let j=i+1;j<ids.length;j++){
+          const a=ids[i], b=ids[j];
+          if(!movedIds.has(a) && !movedIds.has(b)) continue; // 動かした側が関わるペアだけ調べる
+          const dx = nodeX[a]-nodeX[b], dy = nodeY[a]-nodeY[b];
+          if(Math.abs(dx) < CARD_W && Math.abs(dy) < CARD_H){
+            const push = (CARD_W - Math.abs(dx))/2 + 4;
+            if(dx>=0){ nodeX[a]+=push; nodeX[b]-=push; } else { nodeX[a]-=push; nodeX[b]+=push; }
+            moved = true;
+          }
+        }
+      }
+      if(!moved) break;
+    }
+  }
+
+  // 系図の基本原則:子(養子含む)は必ず親より下に表示する。
+  // compactBranch等の調整で、複数の親(実父・養父など)を持つ人物の位置が
+  // どちらか一方の親より浅くなってしまった場合は、深い方の親のすぐ下まで押し下げる。
+  {
+    let fixed = true;
+    for(let guard=0; guard<10 && fixed; guard++){
+      fixed = false;
+      parentEdges.forEach(([p,c])=>{
+        if(nodeY[c] === undefined || nodeY[p] === undefined) return;
+        const minChildY = nodeY[p] + ROW_H*0.5;
+        if(nodeY[c] < minChildY){
+          const shift = minChildY - nodeY[c];
+          const cc = clusterOf[c];
+          (clusterOrder[cc]||[c]).forEach(mid=>{ nodeY[mid] += shift; });
+          fixed = true;
+        }
+      });
+    }
+  }
+
+  // 最終安全策:ここまでの各種調整でも、たまたま近すぎてしまったペアがあれば軽く押し出す。
+  // 直系(trunk)の位置だけは動かさない。
+  {
+    const CARD_W = 158, CARD_H = 100;
+    for(let iter=0; iter<15; iter++){
+      let moved=false;
+      for(let i=0;i<ids.length;i++){
+        for(let j=i+1;j<ids.length;j++){
+          const a=ids[i], b=ids[j];
+          const dx = nodeX[a]-nodeX[b], dy = nodeY[a]-nodeY[b];
+          if(Math.abs(dx) < CARD_W && Math.abs(dy) < CARD_H){
+            const aTrunk = !!(nodeByIdLocal[a] && nodeByIdLocal[a].trunk);
+            const bTrunk = !!(nodeByIdLocal[b] && nodeByIdLocal[b].trunk);
+            const push = (CARD_W - Math.abs(dx))/2 + 4;
+            if(aTrunk && !bTrunk){ nodeX[b] += (dx>=0 ? -push*2 : push*2); }
+            else if(bTrunk && !aTrunk){ nodeX[a] += (dx>=0 ? push*2 : -push*2); }
+            else if(!aTrunk && !bTrunk){
+              if(dx>=0){ nodeX[a]+=push; nodeX[b]-=push; } else { nodeX[a]-=push; nodeX[b]+=push; }
+            }
+            moved = true;
+          }
+        }
+      }
+      if(!moved) break;
+    }
+  }
+
+  return Object.fromEntries(ids.map(id=>[id, {x:nodeX[id], y:nodeY[id]}]));
+}
+
+/* =========================================================================
+   手動で位置を調整した人物をここに追加してください。
+   編集モードでカードをドラッグ→「変更をコピー」ボタンで出力されるコードを
+   このオブジェクトの中に貼り付けると、そのIDだけ自動レイアウトより優先されます。
+   例: { "hineno_takayoshi": {x: 750, y: 80} }
+   ========================================================================= */
+const manualPositions = {
+  "todo_yoshikatsu": {x: -1321, y: 412},
+  "taga_father": {x: -1518, y: -336},
+  "taga_yoshinari": {x: -1323, y: -166},
+  "taga_yoshikiyo": {x: -1716, y: 411},
+  "todo_torataka": {x: -485, y: 232},
+  "miyazaki_shi": {x: -282, y: 197},
+  "todo_takakiyo": {x: 162, y: 470},
+  "todo_takanori": {x: 339, y: 470},
+  "todo_masataka": {x: 511, y: 471},
+  "tora": {x: -679, y: 232},
+  "daughter_yamaoka": {x: -185, y: 471},
+  "daughter_todo_yoshitsura": {x: -13, y: 470},
+  "todo_takatora": {x: -584, y: 569},
+  "kyuhoin": {x: -963, y: 427},
+  "todo_takashige": {x: -1145, y: 802},
+  "todo_takatsugu": {x: -581, y: 903},
+  "todo_takayoshi": {x: -1343, y: 799},
+  "takatsugu_wife": {x: -815, y: 810},
+  "mitsui_noritsuna2": {x: -379, y: -74},
+  "taga_takakata": {x: -1712, y: 1},
+  "todo_tadataka_daughter7": {x: -1133, y: 244},
+  "todo_yoshimasa2": {x: -1321, y: 242},
+  "todo_tadataka_daughter8": {x: -1525, y: 241},
+  "todo_yoshinao": {x: -1716, y: 241},
+  "todo_takanobu": {x: 212, y: 1503},
+  "todo_takatoyo": {x: 91, y: 1995},
+  "todo_takatoshi": {x: -110, y: 1463},
+  "todo_takaharu": {x: 90, y: 1723},
+  "todo_daughter1": {x: -1228, y: 1229},
+  "todo_daughter2": {x: -1046, y: 1227},
+  "todo_takahisa": {x: -590, y: 1223},
+  "todo_takamichi": {x: -294, y: 1220},
+  "todo_takakata": {x: 202, y: 1303},
+  "todo_daughter3": {x: -872, y: 1226},
+  "todo_daughter4": {x: 567, y: 1256},
+  "todo_mototsune": {x: 744, y: 1258},
+  "todo_daughter5": {x: 916, y: 1258},
+  "todo_takachika": {x: -378, y: 1379},
+  "asai_katsumasa": {x: -924, y: -170},
+  "daughter_suzuki": {x: -355, y: 474},
+  "kamehime": {x: 199, y: 804},
+  "gamou_tadasato": {x: 403, y: 805},
+  "daughter_tadasue": {x: 629, y: 811},
+  "daughter_ikoma": {x: 816, y: 810},
+  "ikoma_masatoshi": {x: 1016, y: 812},
+  "daughter_todo_takanori2": {x: 1205, y: 809},
+  "todo_takanori2": {x: 1397, y: 809},
+  "daughter_kobori": {x: 1720, y: 810},
+  "kobori_masakazu": {x: 1892, y: 810},
+  "shojuin": {x: -870, y: 554},
+  "todo_tadataka": {x: -592, y: -142},
+};
+
+/* =========================================================================
+   手動でカードの内容(名前・役割・説明文など)を編集した人物をここに追加してください。
+   編集モードでカードをクリック→内容を編集して保存→「変更をコピー」ボタンで
+   出力されるコードをこのオブジェクトの中に貼り付けると反映されます。
+   指定したフィールドだけが元のデータより優先されます(部分上書き)。
+   例: { "katsuie": {note:"書き換えた説明文"} }
+   ========================================================================= */
+const contentOverrides = {
+};
+
+const layout = computeLayout(nodes, parentEdges, spouseEdges);
+nodes.forEach(n=>{
+  const m = manualPositions[n.id];
+  n.x = m ? m.x : layout[n.id].x;
+  n.y = m ? m.y : layout[n.id].y;
+  const c = contentOverrides[n.id];
+  if(c) Object.assign(n, c);
+});
+const originalNodeById = Object.fromEntries(nodes.map(n=>[n.id, JSON.parse(JSON.stringify(n))]));
+
+/* ========================= 描画・パン/ズーム ========================= */
+const viewport = document.getElementById('viewport');
+const world = document.getElementById('world');
+const svg = document.getElementById('edges');
+const nodesLayer = document.getElementById('nodesLayer');
+const groupBoxLayer = document.getElementById('groupBoxLayer');
+const nodeById = Object.fromEntries(nodes.map(n=>[n.id,n]));
+
+/* =========================================================================
+   家単位の囲み枠(角丸の枠線)を表示したい場合はここに追加してください。
+   members に含めた人物のカードをすべて囲む最小の四角形が自動計算されます。
+   ★ メンバーが画面上で離れた場所にあると、間の無関係なカードまで
+      巻き込んだ大きな枠になってしまうので、位置的にまとまっている
+      グループにのみ使うのがおすすめです。
+   例: { label:"○○家", color:"#8a6d3b", members:["id1","id2","id3"] }
+   ========================================================================= */
+const groupBoxes = [
+  { label:"多賀家(玄蕃家含む)", color:"#8a6d3b", members:["taga_father","taga_yoshinari","todo_yoshimasa2","todo_yoshikatsu","todo_yoshinao","taga_takakata","taga_yoshikiyo"] },
+];
+(function(){
+  const t = document.getElementById('mainTitle'), s = document.getElementById('mainSubtitle');
+  if(t) t.dataset.orig = t.textContent;
+  if(s) s.dataset.orig = s.textContent;
+})();
+
+let worldW, worldH, OFX, OFY;
+
+/* ==== 閲覧専用モード制御 ====
+   URLに ?edit=1 が付いている時だけ編集UIを有効化する。
+   通常の公開URL(パラメータなし)では、編集モードボタンを隠し、
+   タイトル/サブタイトルの直接編集もできないようにする。 */
+const EDIT_ALLOWED = new URLSearchParams(location.search).get('edit') === '1';
+(function applyViewOnlyMode(){
+  const btn = document.getElementById('editModeBtn');
+  if(btn) btn.style.display = EDIT_ALLOWED ? '' : 'none';
+  const t = document.getElementById('mainTitle'), s = document.getElementById('mainSubtitle');
+  if(t) t.contentEditable = EDIT_ALLOWED ? 'true' : 'false';
+  if(s) s.contentEditable = EDIT_ALLOWED ? 'true' : 'false';
+})();
+
+let editMode = false;
+let justDragged = false;
+let dragState = null;
+const manualOverrides = {}; // このセッション中にドラッグしたIDの記録(「変更をコピー」に使う)
+let newNodeCounter = 0;
+const addedNodeIds = new Set();   // このセッション中に追加した人物のID
+const deletedIds = new Set();     // このセッション中に削除した(元からいた)人物のID
+const addedParentEdges = [];      // このセッション中に追加した親子関係
+const addedSpouseEdges = [];      // このセッション中に追加した婚姻関係
+const removedParentEdges = [];    // このセッション中に削除した、元からあった親子関係
+const removedSpouseEdges = [];    // このセッション中に削除した、元からあった婚姻関係
+function pt(n){ return [n.x+OFX, n.y+OFY]; }
+
+function edgeLabel(x,y,text){
+  const w = Math.max(30, text.length*12+14);
+  return `<g class="edge-label"><rect x="${x-w/2}" y="${y-11}" width="${w}" height="22" rx="11"/><text x="${x}" y="${y+4}">${text}</text></g>`;
+}
+
+/* ---- 親子線・婚姻線:カードの縁から、繋がる相手の方向へ向けてまっすぐ線を引く ----
+   ドラッグでカードの位置が変わっても、常に直線のまま追従する。 */
+const CARD_HW = 80, CARD_HH = 52; // カード(158px×約100px)のおおよその半分のサイズ
+const CARD_HW_PROTAGONIST = 115, CARD_HH_PROTAGONIST = 73; // 主人公カード(拡大版)の半分のサイズ
+function nodeHalf(n){
+  return n.protagonist ? {hw:CARD_HW_PROTAGONIST, hh:CARD_HH_PROTAGONIST} : {hw:CARD_HW, hh:CARD_HH};
+}
+function anchorPoint(cx,cy,tx,ty,hw,hh){
+  const dx=tx-cx, dy=ty-cy;
+  if(dx===0 && dy===0) return [cx,cy];
+  const sx = dx!==0 ? hw/Math.abs(dx) : Infinity;
+  const sy = dy!==0 ? hh/Math.abs(dy) : Infinity;
+  const s = Math.min(sx,sy,1);
+  return [cx+dx*s, cy+dy*s];
+}
+function cardEdgePoints(A,B){
+  const [ax,ay]=pt(A), [bx,by]=pt(B);
+  const hA = nodeHalf(A), hB = nodeHalf(B);
+  const [x1,y1] = anchorPoint(ax,ay,bx,by,hA.hw,hA.hh);
+  const [x2,y2] = anchorPoint(bx,by,ax,ay,hB.hw,hB.hh);
+  return [x1,y1,x2,y2];
+}
+
+// 子孫を辿るための親→子マップ(ドラッグ時のカスケード移動にも使う)
+const childrenOfGlobal = {};
+nodes.forEach(n=>{ childrenOfGlobal[n.id]=[]; });
+parentEdges.forEach(([p,c])=>{ childrenOfGlobal[p].push(c); });
+
+/* ---------- 下部：アクセシブルな人物一覧 ---------- */
+const listContainer = document.getElementById('listContainer');
+function renderList(){
+  listContainer.innerHTML = nodes.map(n=>{
+    const cm = certaintyMeta[n.certainty];
+    return `<details class="person house-${n.house}">
+      <summary>
+        <span class="dname${n.unnamed?' unnamed':''}">${n.name}</span>
+        <span class="drole">${n.role||''}</span>
+      </summary>
+      <div class="body">
+        ${n.yomi ? `<div class="yomi">${n.yomi}</div>` : ''}
+        <p>${n.note||''}</p>
+        ${n.sources&&n.sources.length ? `<div class="src"><strong>根拠・参照:</strong> ${n.sources.join('、')}</div>` : ''}
+      </div>
+    </details>`;
+  }).join('');
+}
+
+function renderAll(){
+  const PAD = 220;
+  const minX = Math.min(...nodes.map(n=>n.x)) - PAD;
+  const maxX = Math.max(...nodes.map(n=>n.x)) + PAD;
+  const minY = Math.min(...nodes.map(n=>n.y)) - PAD;
+  const maxY = Math.max(...nodes.map(n=>n.y)) + PAD;
+  worldW = maxX - minX; worldH = maxY - minY;
+  OFX = -minX; OFY = -minY;
+
+  world.style.width = worldW+"px";
+  world.style.height = worldH+"px";
+  svg.setAttribute("width", worldW);
+  svg.setAttribute("height", worldH);
+
+  let svgHTML = "";
+  parentEdges.forEach(([p,c,label,kind])=>{
+    const P = nodeById[p], C = nodeById[c];
+    const [x1,y1,x2,y2] = cardEdgePoints(P,C);
+    const isAdoption = kind==='adoption';
+    const color = isAdoption ? "#9c5040" : houseColors[P.house];
+    const dash = isAdoption ? 'stroke-dasharray="9 7"' : '';
+    svgHTML += `<g class="edge" data-a="${p}" data-b="${c}">
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${dash} opacity="0.6"/>
+      ${edgeLabel((x1+x2)/2, (y1+y2)/2-6, label)}
+    </g>`;
+  });
+  spouseEdges.forEach(e=>{
+    const [aId,bId,label,kind] = e;
+    const A = nodeById[aId], B = nodeById[bId];
+    const [x1,y1,x2,y2] = cardEdgePoints(A,B);
+    const color = kind==='marriage' ? '#8a9a8f' : '#a19c8e';
+    const dash = kind==='marriage' ? 'stroke-dasharray="2 5" stroke-width="2.4"' : 'stroke-dasharray="3 5" stroke-width="1.3"';
+    svgHTML += `<g class="edge" data-a="${aId}" data-b="${bId}">
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" ${dash} opacity="0.75"/>
+      ${edgeLabel((x1+x2)/2, (y1+y2)/2-8, label)}
+    </g>`;
+  });
+  svg.innerHTML = svgHTML;
+
+  let groupBoxHTML = "";
+  groupBoxes.forEach(g=>{
+    const pts = g.members.map(id=>nodeById[id]).filter(Boolean).map(n=>pt(n));
+    if(pts.length===0) return;
+    const hw = 90, hh = 62, PAD2 = 26;
+    const gMinX = Math.min(...pts.map(p=>p[0])) - hw - PAD2;
+    const gMaxX = Math.max(...pts.map(p=>p[0])) + hw + PAD2;
+    const gMinY = Math.min(...pts.map(p=>p[1])) - hh - PAD2 - 18;
+    const gMaxY = Math.max(...pts.map(p=>p[1])) + hh + PAD2;
+    groupBoxHTML += `<div class="group-box" style="left:${gMinX}px; top:${gMinY}px; width:${gMaxX-gMinX}px; height:${gMaxY-gMinY}px; border-color:${g.color}; background-color:${g.color}20; opacity:0.9;">
+      <div class="group-box-label" style="color:${g.color}; border:1.5px solid ${g.color};">${g.label}</div>
+    </div>`;
+  });
+  groupBoxLayer.innerHTML = groupBoxHTML;
+
+  nodesLayer.innerHTML = "";
+  nodes.forEach(n=>{
+    const [x,y] = pt(n);
+    const el = document.createElement('div');
+    el.className = `node house-${n.house}` + (n.unnamed ? ' unnamed' : '') + (n.protagonist ? ' protagonist' : '') + (manualPositions[n.id] || manualOverrides[n.id] || contentOverrides[n.id] ? ' manual' : '');
+    el.id = "node-"+n.id;
+    el.style.left = x+"px"; el.style.top = y+"px";
+    const cm = certaintyMeta[n.certainty];
+    el.innerHTML = `<div class="fam">${houseLabels[n.house]}</div><div class="name">${n.name}</div>` +
+      (n.role ? `<div class="role">${n.role}</div>` : '') +
+      (cm ? `<div class="pill" style="color:${cm.color}">${cm.label}</div>` : '');
+    el.addEventListener('mousedown',(e)=>{ if(editMode){ e.stopPropagation(); startNodeDrag(e,n,el); } });
+    el.addEventListener('click',(e)=>{ e.stopPropagation(); if(justDragged) return; if(editMode){ openEditForm(n.id); } else { selectNode(n.id); } });
+    nodesLayer.appendChild(el);
+  });
+  renderList();
+}
+renderAll();
+
+/* ---------- 選択・ハイライト ---------- */
+const panel = document.getElementById('panel');
+let lastSelectedId = null;
+
+function connectedIds(id){
+  const s = new Set([id]);
+  // 配偶者
+  spouseEdges.forEach(([a,b])=>{ if(a===id) s.add(b); if(b===id) s.add(a); });
+  // 直接の子(これまで通り、1世代分)
+  parentEdges.forEach(([a,b])=>{ if(a===id) s.add(b); });
+  // 直系先祖:父母から、さらにその父母…と何世代でもさかのぼる(実子・養子とも)
+  (function addAncestors(personId){
+    parentEdges.forEach(([p,c])=>{
+      if(c===personId && !s.has(p)){
+        s.add(p);
+        addAncestors(p);
+      }
+    });
+  })(id);
+  return s;
+}
+function applyHighlight(id){
+  const connected = connectedIds(id);
+  document.querySelectorAll('.node').forEach(el=>{
+    const nid = el.id.replace('node-','');
+    el.classList.toggle('selected', nid===id);
+    el.classList.toggle('hi', connected.has(nid) && nid!==id);
+    el.classList.toggle('dim', !connected.has(nid));
+  });
+  document.querySelectorAll('.edge').forEach(el=>{
+    const a = el.getAttribute('data-a'), bList = (el.getAttribute('data-b')||'').split(',');
+    const onPath = connected.has(a) && bList.some(b=>connected.has(b));
+    el.style.opacity = onPath ? '1' : '0.12';
+  });
+}
+/* 父/養父/母/養母/兄弟姉妹/子を parentEdges から自動的に算出する。
+   ラベルに「養」の字が入っていれば養親、「父」「母」が入っていればそちら側に分類する。
+   兄弟姉妹は、実の親を1人以上共有する人物(本人を除く)。 */
+function getRelatives(id){
+  const asChild = parentEdges.filter(e=>e[1]===id);
+  const asParent = parentEdges.filter(e=>e[0]===id);
+  const father=[], adoptiveFather=[], mother=[], adoptiveMother=[];
+  asChild.forEach(([p,,label,kind])=>{
+    const isAdopt = kind==='adoption' || (label||'').includes('養');
+    const isMother = (label||'').includes('母');
+    if(isAdopt) (isMother ? adoptiveMother : adoptiveFather).push(p);
+    else (isMother ? mother : father).push(p);
+  });
+  const bloodParentIds = new Set(asChild.filter(e=>e[3]!=='adoption' && !(e[2]||'').includes('養')).map(e=>e[0]));
+  const siblingSet = new Set();
+  bloodParentIds.forEach(pid=>{
+    parentEdges.forEach(([p,c,,kind])=>{
+      if(p===pid && c!==id && kind!=='adoption') siblingSet.add(c);
+    });
+  });
+  const children = [...new Set(asParent.map(e=>e[1]))];
+  return { father, adoptiveFather, mother, adoptiveMother, siblings:[...siblingSet], children };
+}
+function relLinkList(ids){
+  return ids.map(id=>{
+    const p = nodeById[id]; if(!p) return '';
+    return `<span class="rel-link" data-goto="${id}">${p.name}</span>`;
+  }).filter(Boolean).join('、');
+}
+function renderRelatives(id){
+  const r = getRelatives(id);
+  const rows = [
+    ['父', r.father], ['養父', r.adoptiveFather],
+    ['母', r.mother], ['養母', r.adoptiveMother],
+    ['兄弟姉妹', r.siblings], ['子', r.children],
+  ].filter(([,ids])=>ids.length>0);
+  if(rows.length===0) return '';
+  return rows.map(([label,ids])=>
+    `<div class="rel-row"><span class="rel-label">${label}</span><span class="rel-values">${relLinkList(ids)}</span></div>`
+  ).join('');
+}
+function selectNode(id, opts){
+  lastSelectedId = id;
+  const n = nodeById[id];
+  applyHighlight(id);
+  const cm = certaintyMeta[n.certainty];
+  const pNameEl = document.getElementById('pName');
+  pNameEl.textContent = n.name; pNameEl.classList.toggle('unnamed', !!n.unnamed);
+  document.getElementById('pYomi').textContent = n.yomi||"";
+  const hEl = document.getElementById('pHouse'); hEl.textContent = houseLabels[n.house]; hEl.style.color = houseColors[n.house];
+  const cEl = document.getElementById('pCertainty'); cEl.textContent = cm.label; cEl.style.color = cm.color;
+  document.getElementById('pNote').textContent = n.note||"";
+  const relEl = document.getElementById('pRelatives');
+  relEl.innerHTML = renderRelatives(id);
+  relEl.querySelectorAll('.rel-link').forEach(a=>{
+    a.addEventListener('click', (e)=>{ e.stopPropagation(); selectNode(a.getAttribute('data-goto'), {zoom:true}); });
+  });
+  const srcEl = document.getElementById('pSources');
+  srcEl.innerHTML = (n.sources&&n.sources.length) ? `<strong>根拠・参照</strong><ul>${n.sources.map(s=>`<li>${s}</li>`).join('')}</ul>` : '';
+  panel.classList.add('show');
+  focusOn(n, opts && opts.zoom);
+}
+function clearSelection(){
+  lastSelectedId = null;
+  document.querySelectorAll('.node').forEach(el=>el.classList.remove('selected','hi','dim'));
+  document.querySelectorAll('.edge').forEach(el=>el.style.opacity='');
+  panel.classList.remove('show');
+}
+document.getElementById('panelClose').addEventListener('click', clearSelection);
+viewport.addEventListener('click', (e)=>{ if(panMoved){ panMoved=false; return; } clearSelection(); });
+
+/* ---------- スマホ幅:パネルを下スワイプで閉じる ---------- */
+(function(){
+  const panelEl = document.getElementById('panel');
+  const handle = document.getElementById('panelHandle');
+  let dragging = false, startY = 0, currentDy = 0;
+  const DISMISS_THRESHOLD = 90;
+
+  function isMobileSheet(){ return window.matchMedia('(max-width:640px)').matches; }
+
+  function onStart(clientY, fromHandle){
+    if(!isMobileSheet()) return false;
+    // ハンドル以外から始める場合は、パネル内が一番上までスクロールされている時だけ許可
+    if(!fromHandle && panelEl.scrollTop > 0) return false;
+    dragging = true; startY = clientY; currentDy = 0;
+    panelEl.classList.add('dragging');
+    return true;
+  }
+  function onMove(clientY){
+    if(!dragging) return;
+    const dy = clientY - startY;
+    if(dy <= 0){ currentDy = 0; panelEl.style.transform = ''; return; }
+    currentDy = dy;
+    panelEl.style.transform = `translateY(${dy}px)`;
+  }
+  function onEnd(){
+    if(!dragging) return;
+    dragging = false;
+    panelEl.classList.remove('dragging');
+    if(currentDy > DISMISS_THRESHOLD){
+      panelEl.style.transform = `translateY(100%)`;
+      setTimeout(()=>{ clearSelection(); panelEl.style.transform=''; }, 160);
+    } else {
+      panelEl.style.transform = '';
+    }
+    currentDy = 0;
+  }
+
+  handle.addEventListener('touchstart', (e)=>{ if(onStart(e.touches[0].clientY, true)) e.preventDefault(); }, {passive:false});
+  panelEl.addEventListener('touchstart', (e)=>{ onStart(e.touches[0].clientY, false); }, {passive:true});
+  panelEl.addEventListener('touchmove', (e)=>{
+    if(!dragging) return;
+    e.preventDefault();
+    onMove(e.touches[0].clientY);
+  }, {passive:false});
+  panelEl.addEventListener('touchend', onEnd);
+  panelEl.addEventListener('touchcancel', onEnd);
+})();
+
+
+/* ---------- パン & ズーム ---------- */
+let scale=1, panX=0, panY=0, isDragging=false, startX=0, startY=0, startPanX=0, startPanY=0;
+function applyTransform(){ world.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`; }
+
+let animateTimer = null;
+function cancelAnimation(){
+  world.classList.remove('animating');
+  clearTimeout(animateTimer);
+}
+function animateTo(targetScale, targetPanX, targetPanY){
+  world.classList.add('animating');
+  scale = targetScale; panX = targetPanX; panY = targetPanY;
+  applyTransform();
+  clearTimeout(animateTimer);
+  animateTimer = setTimeout(()=>{ world.classList.remove('animating'); }, 600);
+}
+
+/* ---------- 編集モード:カードをドラッグして位置を手動指定する ---------- */
+const DRAG_THRESHOLD = 4; // これ未満の移動は「クリック」として扱う
+function startNodeDrag(e, n, el){
+  const [wx, wy] = pt(n);
+  dragState = { id:n.id, el, startClientX:e.clientX, startClientY:e.clientY, startWorldX:wx, startWorldY:wy, curWorldX:wx, curWorldY:wy, moved:false };
+  el.classList.add('being-dragged');
+}
+window.addEventListener('mousemove',(e)=>{
+  if(!dragState) return;
+  const dx = (e.clientX - dragState.startClientX)/scale;
+  const dy = (e.clientY - dragState.startClientY)/scale;
+  if(Math.hypot(e.clientX-dragState.startClientX, e.clientY-dragState.startClientY) > DRAG_THRESHOLD) dragState.moved = true;
+  dragState.curWorldX = dragState.startWorldX + dx;
+  dragState.curWorldY = dragState.startWorldY + dy;
+  dragState.el.style.left = dragState.curWorldX+"px";
+  dragState.el.style.top = dragState.curWorldY+"px";
+});
+window.addEventListener('mouseup',()=>{
+  if(!dragState) return;
+  const moved = dragState.moved;
+  const id = dragState.id;
+  const el = dragState.el;
+
+  if(moved){
+    const n = nodeById[id];
+    const oldX = n.x, oldY = n.y;
+    const newX = dragState.curWorldX - OFX;
+    const newY = dragState.curWorldY - OFY;
+    n.x = newX; n.y = newY;
+    manualOverrides[id] = { x: Math.round(n.x), y: Math.round(n.y) };
+
+    const dx = newX-oldX, dy = newY-oldY;
+    const cascadeEl = document.getElementById('cascadeChildren');
+    if(cascadeEl && cascadeEl.checked && (dx||dy)){
+      const stack = [...childrenOfGlobal[id]];
+      const visited = new Set();
+      while(stack.length){
+        const cid = stack.pop();
+        if(visited.has(cid)) continue;
+        visited.add(cid);
+        if(manualPositions[cid] || manualOverrides[cid]) continue; // 既に個別指定済みならそこで追従を止める
+        const cn = nodeById[cid];
+        cn.x += dx; cn.y += dy;
+        manualOverrides[cid] = { x: Math.round(cn.x), y: Math.round(cn.y) };
+        childrenOfGlobal[cid].forEach(gc=> stack.push(gc));
+      }
+    }
+    justDragged = true;
+    setTimeout(()=>{ justDragged=false; }, 0);
+  } else {
+    el.style.left = (dragState.startWorldX)+"px";
+    el.style.top = (dragState.startWorldY)+"px";
+  }
+
+  el.classList.remove('being-dragged');
+  dragState = null;
+  if(moved) renderAll();
+});
+
+const editBtn = document.getElementById('editModeBtn');
+const editPanel = document.getElementById('editPanel');
+editBtn.addEventListener('click', ()=>{
+  editMode = !editMode;
+  editBtn.textContent = editMode ? '編集モード:オン' : '編集モード';
+  editBtn.classList.toggle('active', editMode);
+  viewport.classList.toggle('edit-mode', editMode);
+  editPanel.style.display = editMode ? 'flex' : 'none';
+  if(!editMode) document.getElementById('editForm').classList.remove('show');
+});
+
+function jsString(s){ return JSON.stringify(s); }
+
+function nodeLiteral(n){
+  const parts = [
+    `id:${jsString(n.id)}`, `name:${jsString(n.name)}`, `house:${jsString(n.house)}`,
+    `role:${jsString(n.role||'')}`,
+  ];
+  if(n.yomi) parts.push(`yomi:${jsString(n.yomi)}`);
+  parts.push(`certainty:${jsString(n.certainty||'uncertain')}`);
+  if(n.unnamed) parts.push(`unnamed:true`);
+  parts.push(`note:${jsString(n.note||'')}`);
+  parts.push(`sources:${jsString(n.sources||[])}`);
+  return `  {${parts.join(", ")}},`;
+}
+function edgeLiteral(e){ return `  [${e.map(v=>jsString(v)).join(", ")}],`; }
+
+document.getElementById('saveFileBtn').addEventListener('click', ()=>{
+  try{
+    /* ---- ① nodes / parentEdges / spouseEdges は、追加・削除も含めて
+       既にこのセッション中の操作でメモリ上の配列(nodes, parentEdges, spouseEdges)
+       がそのまま最新状態になっているので、その内容をそのままコードに書き出す ---- */
+    function serializeNode(n){
+      const skip = new Set(['x','y']); // 座標は manualPositions 側で扱うので除外
+      const parts = Object.keys(n).filter(k=>!skip.has(k)).map(k=>{
+        const v = n[k];
+        return `${k}:${typeof v==='boolean' ? v : JSON.stringify(v)}`;
+      });
+      return `  {${parts.join(", ")}},`;
+    }
+    const nodesBlock = "const nodes = [\n" + nodes.map(serializeNode).join("\n") + "\n];";
+    const parentEdgesBlock = "const parentEdges = [\n" + parentEdges.map(e=>`  ${JSON.stringify(e)},`).join("\n") + "\n];";
+    const spouseEdgesBlock = "const spouseEdges = [\n" + spouseEdges.map(e=>`  ${JSON.stringify(e)},`).join("\n") + "\n];";
+
+    /* ---- ② manualPositions: 元々あった手動座標 + このセッションでドラッグした分をマージ ---- */
+    const mergedPositions = Object.assign({}, manualPositions);
+    Object.keys(manualOverrides).forEach(id=>{
+      mergedPositions[id] = { x: manualOverrides[id].x, y: manualOverrides[id].y };
+    });
+    const positionsLines = Object.keys(mergedPositions).map(id=>
+      `  ${JSON.stringify(id)}: {x: ${mergedPositions[id].x}, y: ${mergedPositions[id].y}},`
+    );
+    const manualPositionsBlock = "const manualPositions = {\n" + positionsLines.join("\n") + "\n};";
+
+    /* ---- ③ contentOverrides: 既にセッション中そのまま最新状態が入っている ---- */
+    const contentLines = Object.keys(contentOverrides).map(id=>{
+      const fields = Object.entries(contentOverrides[id]).map(([k,v])=> `${k}: ${JSON.stringify(v)}`).join(", ");
+      return `  ${JSON.stringify(id)}: {${fields}},`;
+    });
+    const contentOverridesBlock = "const contentOverrides = {\n" + contentLines.join("\n") + "\n};";
+
+    /* ---- ④ 元のスクリプト全文の該当ブロックだけを、新しい内容に差し替える ---- */
+    let updatedScript = ORIGINAL_SCRIPT_SOURCE
+      .replace(/const nodes = \[[\s\S]*?\n\];/, nodesBlock)
+      .replace(/const parentEdges = \[[\s\S]*?\n\];/, parentEdgesBlock)
+      .replace(/const spouseEdges = \[[\s\S]*?\n\];/, spouseEdgesBlock)
+      .replace(/const manualPositions = \{[\s\S]*?\n\};/, manualPositionsBlock)
+      .replace(/const contentOverrides = \{[\s\S]*?\n\};/, contentOverridesBlock);
+
+    /* ---- ⑤ ページ全体のHTML(タイトル/サブタイトルの編集はここに反映済み)を複製し、
+       スクリプト部分だけ上で作った最新版に差し替える。編集UIの一時的な表示状態
+       (パネルの開閉など)は、保存後のファイルを開いた時に変な状態で残らないよう
+       リセットしておく。 ---- */
+    const clone = document.documentElement.cloneNode(true);
+    const q = sel => clone.querySelector(sel);
+    if(q('#editPanel')) q('#editPanel').style.display = 'none';
+    if(q('#editModeBtn')){ q('#editModeBtn').textContent = '編集モード'; q('#editModeBtn').classList.remove('active'); }
+    if(q('#viewport')) q('#viewport').classList.remove('edit-mode','dragging');
+    if(q('#editForm')) q('#editForm').classList.remove('show');
+    if(q('#ef_delete_confirm')) q('#ef_delete_confirm').classList.remove('show');
+    if(q('#panel')) q('#panel').classList.remove('show');
+    if(q('#copyOutput')){ q('#copyOutput').style.display='none'; }
+    if(q('#saveOverlay')) q('#saveOverlay').classList.remove('show');
+
+    let fullHTML = "<!DOCTYPE html>\n" + clone.outerHTML;
+    fullHTML = fullHTML.split(ORIGINAL_SCRIPT_SOURCE).join(updatedScript);
+
+    /* ---- ⑥ ファイルとしてダウンロードを試みる(通常のブラウザで開いていれば成功する) ---- */
+    let filename = 'genealogy_saved.html';
+    try{
+      const base = decodeURIComponent(location.pathname).split('/').pop();
+      if(base && base.toLowerCase().endsWith('.html')) filename = base;
+    }catch(e){}
+
+    let downloadTried = false, downloadError = null;
+    try{
+      const blob = new Blob([fullHTML], {type:'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=> URL.revokeObjectURL(url), 3000);
+      downloadTried = true;
+    }catch(e){ downloadError = e; }
+
+    /* ---- ⑦ プレビュー画面などダウンロードがブロックされる環境でも保存できるよう、
+       常に全文をコピーできるオーバーレイを表示しておく。ダウンロードが実際に
+       成功していれば、このオーバーレイは無視してそのまま閉じてもらってよい。 ---- */
+    const overlay = document.getElementById('saveOverlay');
+    const statusEl = document.getElementById('saveOverlayStatus');
+    const textEl = document.getElementById('fullHtmlOutput');
+    textEl.value = fullHTML;
+    statusEl.textContent = downloadTried
+      ? `「${filename}」としてダウンロードを試みました。ダウンロードフォルダに保存されていれば、以下のコピー操作は不要です。`
+      : 'ダウンロード処理でエラーが発生しました。以下から全文をコピーして保存してください。';
+    overlay.classList.add('show');
+    textEl.focus(); textEl.select();
+  }catch(err){
+    alert('保存中にエラーが発生しました。お手数ですが「変更をコピー」で内容を確認してください。\n('+err.message+')');
+    console.error(err);
+  }
+});
+
+document.getElementById('copyFullHtmlBtn').addEventListener('click', ()=>{
+  const textEl = document.getElementById('fullHtmlOutput');
+  textEl.focus(); textEl.select();
+  let copied = false;
+  try{ copied = document.execCommand('copy'); }catch(e){}
+  if(!copied && navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(textEl.value).then(()=>{
+      document.getElementById('saveOverlayStatus').textContent = 'コピーしました。テキストエディタに貼り付けて「.html」で保存してください。';
+    }).catch(()=>{
+      document.getElementById('saveOverlayStatus').textContent = '自動コピーに失敗しました。テキストエリアを選択した状態でCtrl+C(Macは⌘+C)を押してください。';
+    });
+  } else {
+    document.getElementById('saveOverlayStatus').textContent = copied
+      ? 'コピーしました。テキストエディタに貼り付けて「.html」で保存してください。'
+      : '自動コピーに失敗しました。テキストエリアを選択した状態でCtrl+C(Macは⌘+C)を押してください。';
+  }
+});
+document.getElementById('saveOverlayClose').addEventListener('click', ()=>{
+  document.getElementById('saveOverlay').classList.remove('show');
+});
+document.getElementById('copyPositionsBtn').addEventListener('click', ()=>{
+  const posIds = Object.keys(manualOverrides); // 新規追加分もここに含める(①に座標を書く)
+  const contentIds = Object.keys(contentOverrides);
+  const addedIds = [...addedNodeIds];
+  const box = document.getElementById('copyOutput');
+  const titleEl = document.getElementById('mainTitle');
+  const subtitleEl = document.getElementById('mainSubtitle');
+  const titleChanged = titleEl && titleEl.dataset.orig !== undefined && titleEl.textContent !== titleEl.dataset.orig;
+  const subtitleChanged = subtitleEl && subtitleEl.dataset.orig !== undefined && subtitleEl.textContent !== subtitleEl.dataset.orig;
+  const nothing = posIds.length===0 && contentIds.length===0 && addedIds.length===0
+    && addedParentEdges.length===0 && addedSpouseEdges.length===0 && deletedIds.size===0
+    && removedParentEdges.length===0 && removedSpouseEdges.length===0
+    && !titleChanged && !subtitleChanged;
+  if(nothing){
+    box.value = '(まだ何も変更していません)';
+  } else {
+    let out = "";
+    if(posIds.length){
+      const lines = posIds.map(id=> `  "${id}": {x: ${manualOverrides[id].x}, y: ${manualOverrides[id].y}},`);
+      out += "// ① manualPositions の中に貼り付け(新しく追加した人物の座標も含む)\nconst manualPositions = {\n" + lines.join("\n") + "\n};\n\n";
+    }
+    if(contentIds.length){
+      const lines = contentIds.map(id=>{
+        const fields = Object.entries(contentOverrides[id]).map(([k,v])=> `${k}: ${jsString(v)}`).join(", ");
+        return `  "${id}": {${fields}},`;
+      });
+      out += "// ② contentOverrides の中に貼り付け\nconst contentOverrides = {\n" + lines.join("\n") + "\n};\n\n";
+    }
+    if(addedIds.length){
+      const lines = addedIds.map(id=> nodeLiteral(nodeById[id]));
+      out += "// ③ nodes 配列の末尾(閉じ「];」の直前)に貼り付け(座標は①へ別途記載済み)\n" + lines.join("\n") + "\n\n";
+    }
+    if(addedParentEdges.length){
+      out += "// ④ parentEdges 配列の末尾に貼り付け\n" + addedParentEdges.map(edgeLiteral).join("\n") + "\n\n";
+    }
+    if(addedSpouseEdges.length){
+      out += "// ⑤ spouseEdges 配列の末尾に貼り付け\n" + addedSpouseEdges.map(edgeLiteral).join("\n") + "\n\n";
+    }
+    if(deletedIds.size){
+      out += "// ⑥ 以下のIDを nodes 配列、および parentEdges・spouseEdges 配列の中から\n"
+           + "//    (このIDが含まれる行ごと)手動で削除してください\n"
+           + "// 削除対象: " + [...deletedIds].map(jsString).join(", ") + "\n\n";
+    }
+    if(removedParentEdges.length){
+      out += "// ⑦ parentEdges 配列から、以下と同じ内容の行を探して削除してください\n"
+           + removedParentEdges.map(edgeLiteral).join("\n") + "\n\n";
+    }
+    if(removedSpouseEdges.length){
+      out += "// ⑧ spouseEdges 配列から、以下と同じ内容の行を探して削除してください\n"
+           + removedSpouseEdges.map(edgeLiteral).join("\n") + "\n\n";
+    }
+    if(titleChanged || subtitleChanged){
+      out += "// ⑨ HTML内の <div class=\"title\"> の行を、以下に置き換えてください\n"
+           + `<div class="title"><span id="mainTitle" contenteditable="true" spellcheck="false">${titleEl.textContent}</span><small id="mainSubtitle" contenteditable="true" spellcheck="false">${subtitleEl.textContent}</small></div>`;
+    }
+    box.value = out.trim();
+  }
+  box.style.display='block';
+  box.select();
+  try{ navigator.clipboard.writeText(box.value); }catch(err){}
+});
+document.getElementById('resetPositionsBtn').addEventListener('click', ()=>{
+  Object.keys(manualOverrides).forEach(id=> { if(!addedNodeIds.has(id)) delete manualOverrides[id]; });
+  nodes.forEach(n=>{
+    if(addedNodeIds.has(n.id)) return;
+    const m = manualPositions[n.id];
+    n.x = m ? m.x : layout[n.id].x;
+    n.y = m ? m.y : layout[n.id].y;
+  });
+  document.getElementById('copyOutput').style.display='none';
+  renderAll();
+});
+
+/* ---------- カード内容の編集フォーム(追加・削除も含む) ---------- */
+let editingId = null;
+let isNewNode = false;
+const efHouse = document.getElementById('ef_house');
+const efCertainty = document.getElementById('ef_certainty');
+const efFather = document.getElementById('ef_father');
+const efMother = document.getElementById('ef_mother');
+const efSpouse = document.getElementById('ef_spouse');
+Object.keys(houseLabels).forEach(k=>{
+  const opt = document.createElement('option'); opt.value=k; opt.textContent=houseLabels[k]; efHouse.appendChild(opt);
+});
+Object.keys(certaintyMeta).forEach(k=>{
+  const opt = document.createElement('option'); opt.value=k; opt.textContent=certaintyMeta[k].label; efCertainty.appendChild(opt);
+});
+function fillPersonSelect(sel, excludeId){
+  sel.innerHTML = '<option value="">(なし)</option>';
+  nodes.forEach(n=>{
+    if(n.id===excludeId) return;
+    const opt = document.createElement('option'); opt.value=n.id; opt.textContent=n.name; sel.appendChild(opt);
+  });
+}
+function currentFather(id){ const e = parentEdges.find(e=> e[1]===id && e[3]==='blood' && e[2].includes('父')); return e ? e[0] : ''; }
+function currentMother(id){ const e = parentEdges.find(e=> e[1]===id && e[3]==='blood' && e[2].includes('母')); return e ? e[0] : ''; }
+function currentSpouse(id){ const e = spouseEdges.find(e=> e[0]===id || e[1]===id); if(!e) return ''; return e[0]===id ? e[1] : e[0]; }
+
+function openEditForm(id, opts){
+  opts = opts || {};
+  editingId = id;
+  isNewNode = !!opts.isNew;
+  const n = nodeById[id];
+  document.getElementById('ef_title').textContent = isNewNode ? '新しいカードを追加' : 'カードの内容を編集';
+  document.getElementById('ef_name').value = n.name||'';
+  document.getElementById('ef_role').value = n.role||'';
+  document.getElementById('ef_yomi').value = n.yomi||'';
+  efHouse.value = n.house;
+  efCertainty.value = n.certainty||'';
+  document.getElementById('ef_unnamed').checked = !!n.unnamed;
+  document.getElementById('ef_note').value = n.note||'';
+  document.getElementById('ef_sources').value = (n.sources||[]).join('\n');
+
+  fillPersonSelect(efFather, id); fillPersonSelect(efMother, id); fillPersonSelect(efSpouse, id);
+  efFather.value = currentFather(id);
+  efMother.value = currentMother(id);
+  efSpouse.value = currentSpouse(id);
+
+  document.getElementById('ef_delete').style.display = isNewNode ? 'none' : 'inline-block'; // 新規はまだ保存前なので削除ではなくフォームを閉じれば良い
+  document.getElementById('ef_delete_confirm').classList.remove('show');
+  document.getElementById('panel').classList.remove('show');
+  document.getElementById('editForm').classList.add('show');
+}
+
+document.getElementById('addCardBtn').addEventListener('click', ()=>{
+  const rect = viewport.getBoundingClientRect();
+  const wx = (rect.width/2 - panX)/scale - OFX;
+  const wy = (rect.height/2 - panY)/scale - OFY;
+  const id = 'new_' + (++newNodeCounter);
+  const n = { id, name:'新しい人物', house:'other', role:'', yomi:'', certainty:'uncertain', unnamed:false, note:'', sources:[], x:wx, y:wy };
+  nodes.push(n);
+  nodeById[id] = n;
+  childrenOfGlobal[id] = [];
+  originalNodeById[id] = JSON.parse(JSON.stringify(n));
+  addedNodeIds.add(id);
+  manualOverrides[id] = { x: Math.round(wx), y: Math.round(wy) };
+  renderAll();
+  openEditForm(id, {isNew:true});
+});
+
+document.getElementById('editFormClose').addEventListener('click', ()=>{
+  document.getElementById('editForm').classList.remove('show');
+  if(isNewNode){
+    // 保存せずに閉じた場合、追加しかけのカードごと取り消す
+    removeNodeCompletely(editingId);
+    renderAll();
+  }
+  editingId = null; isNewNode = false;
+});
+
+function removeNodeCompletely(id){
+  const idx = nodes.findIndex(n=>n.id===id);
+  if(idx>=0) nodes.splice(idx,1);
+  delete nodeById[id];
+  delete childrenOfGlobal[id];
+  Object.keys(childrenOfGlobal).forEach(p=>{ childrenOfGlobal[p] = childrenOfGlobal[p].filter(c=>c!==id); });
+  for(let i=parentEdges.length-1;i>=0;i--){ if(parentEdges[i][0]===id || parentEdges[i][1]===id) parentEdges.splice(i,1); }
+  for(let i=spouseEdges.length-1;i>=0;i--){ if(spouseEdges[i][0]===id || spouseEdges[i][1]===id) spouseEdges.splice(i,1); }
+  for(let i=addedParentEdges.length-1;i>=0;i--){ if(addedParentEdges[i][0]===id || addedParentEdges[i][1]===id) addedParentEdges.splice(i,1); }
+  for(let i=addedSpouseEdges.length-1;i>=0;i--){ if(addedSpouseEdges[i][0]===id || addedSpouseEdges[i][1]===id) addedSpouseEdges.splice(i,1); }
+  delete manualOverrides[id];
+  delete contentOverrides[id];
+  delete originalNodeById[id];
+  if(addedNodeIds.has(id)){ addedNodeIds.delete(id); }
+  else { deletedIds.add(id); }
+}
+
+function removeParentEdgeIfExists(childId, label){
+  const idx = parentEdges.findIndex(e=> e[1]===childId && e[3]==='blood' && e[2].includes(label));
+  if(idx<0) return;
+  const edge = parentEdges[idx];
+  parentEdges.splice(idx,1);
+  if(childrenOfGlobal[edge[0]]) childrenOfGlobal[edge[0]] = childrenOfGlobal[edge[0]].filter(c=>c!==childId);
+  const addedIdx = addedParentEdges.indexOf(edge);
+  if(addedIdx>=0) addedParentEdges.splice(addedIdx,1); else removedParentEdges.push(edge);
+}
+function addParentEdge(parentId, childId, label){
+  const e = [parentId, childId, label, "blood"];
+  parentEdges.push(e); addedParentEdges.push(e);
+  if(!childrenOfGlobal[parentId]) childrenOfGlobal[parentId] = [];
+  childrenOfGlobal[parentId].push(childId);
+}
+function removeSpouseEdgeIfExists(id){
+  const idx = spouseEdges.findIndex(e=> e[0]===id || e[1]===id);
+  if(idx<0) return;
+  const edge = spouseEdges[idx];
+  spouseEdges.splice(idx,1);
+  const addedIdx = addedSpouseEdges.indexOf(edge);
+  if(addedIdx>=0) addedSpouseEdges.splice(addedIdx,1); else removedSpouseEdges.push(edge);
+}
+function addSpouseEdge(id, otherId){
+  const e = [id, otherId, "婚姻", "marriage"];
+  spouseEdges.push(e); addedSpouseEdges.push(e);
+}
+
+document.getElementById('ef_save').addEventListener('click', ()=>{
+  if(!editingId) return;
+  const n = nodeById[editingId];
+  const orig = originalNodeById[editingId];
+  const vals = {
+    name: document.getElementById('ef_name').value.trim() || '新しい人物',
+    role: document.getElementById('ef_role').value.trim(),
+    yomi: document.getElementById('ef_yomi').value.trim(),
+    house: efHouse.value,
+    certainty: efCertainty.value,
+    unnamed: document.getElementById('ef_unnamed').checked,
+    note: document.getElementById('ef_note').value.trim(),
+    sources: document.getElementById('ef_sources').value.split('\n').map(s=>s.trim()).filter(Boolean),
+  };
+  Object.assign(n, vals);
+
+  const newFatherId = efFather.value, newMotherId = efMother.value, newSpouseId = efSpouse.value;
+  if(newFatherId !== currentFather(editingId)){
+    removeParentEdgeIfExists(editingId, '父');
+    if(newFatherId) addParentEdge(newFatherId, editingId, '父');
+  }
+  if(newMotherId !== currentMother(editingId)){
+    removeParentEdgeIfExists(editingId, '母');
+    if(newMotherId) addParentEdge(newMotherId, editingId, '母');
+  }
+  if(newSpouseId !== currentSpouse(editingId)){
+    removeSpouseEdgeIfExists(editingId);
+    if(newSpouseId) addSpouseEdge(editingId, newSpouseId);
+  }
+
+  if(!isNewNode){
+    const diff = {};
+    Object.keys(vals).forEach(k=>{
+      const o = orig[k], v = vals[k];
+      const same = Array.isArray(o) ? JSON.stringify(o||[])===JSON.stringify(v) : ((o||'')===v || (!o && !v));
+      if(!same) diff[k] = v;
+    });
+    if(Object.keys(diff).length){ contentOverrides[editingId] = diff; } else { delete contentOverrides[editingId]; }
+  }
+
+  document.getElementById('editForm').classList.remove('show');
+  editingId = null; isNewNode = false;
+  renderAll();
+});
+document.getElementById('ef_delete').addEventListener('click', ()=>{
+  if(!editingId) return;
+  document.getElementById('ef_delete_confirm').classList.add('show');
+});
+document.getElementById('ef_delete_no').addEventListener('click', ()=>{
+  document.getElementById('ef_delete_confirm').classList.remove('show');
+});
+document.getElementById('ef_delete_yes').addEventListener('click', ()=>{
+  if(!editingId) return;
+  removeNodeCompletely(editingId);
+  document.getElementById('ef_delete_confirm').classList.remove('show');
+  document.getElementById('editForm').classList.remove('show');
+  editingId = null; isNewNode = false;
+  renderAll();
+});
+document.getElementById('ef_resetOne').addEventListener('click', ()=>{
+  if(!editingId) return;
+  delete contentOverrides[editingId];
+  Object.assign(nodeById[editingId], JSON.parse(JSON.stringify(originalNodeById[editingId])));
+  document.getElementById('editForm').classList.remove('show');
+  editingId = null;
+  renderAll();
+});
+
+
+
+function fitToView(animate){
+  const rect = viewport.getBoundingClientRect();
+  const s = Math.min(rect.width/worldW, rect.height/worldH) * 0.92;
+  const targetScale = Math.max(0.15, Math.min(s, 1.4));
+  const targetPanX = (rect.width - worldW*targetScale)/2;
+  const targetPanY = (rect.height - worldH*targetScale)/2;
+  if(animate){ animateTo(targetScale, targetPanX, targetPanY); }
+  else { scale=targetScale; panX=targetPanX; panY=targetPanY; applyTransform(); }
+}
+function clampScale(s){ return Math.min(2.6, Math.max(0.15, s)); }
+
+let panMoved = false;
+viewport.addEventListener('mousedown',(e)=>{ cancelAnimation(); isDragging=true; panMoved=false; startX=e.clientX; startY=e.clientY; startPanX=panX; startPanY=panY; viewport.classList.add('dragging'); });
+window.addEventListener('mousemove',(e)=>{ if(!isDragging) return; if(Math.hypot(e.clientX-startX,e.clientY-startY)>4) panMoved=true; panX=startPanX+(e.clientX-startX); panY=startPanY+(e.clientY-startY); applyTransform(); });
+window.addEventListener('mouseup',()=>{ isDragging=false; viewport.classList.remove('dragging'); });
+
+viewport.addEventListener('wheel',(e)=>{
+  if(e.target.closest('.panel')) return; // パネル上ではズームさせず、パネル自身のスクロールに任せる
+  e.preventDefault();
+  cancelAnimation();
+  const rect = viewport.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const worldMX=(mx-panX)/scale, worldMY=(my-panY)/scale;
+  scale = clampScale(scale*(e.deltaY<0?1.12:1/1.12));
+  panX = mx-worldMX*scale; panY = my-worldMY*scale; applyTransform();
+},{passive:false});
+
+let touchStartDist=null, touchStartScale=1, touchStartMid=null;
+viewport.addEventListener('touchstart',(e)=>{
+  cancelAnimation();
+  if(e.touches.length===1){ isDragging=true; panMoved=false; startX=e.touches[0].clientX; startY=e.touches[0].clientY; startPanX=panX; startPanY=panY; }
+  else if(e.touches.length===2){ isDragging=false; const [t1,t2]=e.touches; touchStartDist=Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY); touchStartScale=scale; touchStartMid={x:(t1.clientX+t2.clientX)/2,y:(t1.clientY+t2.clientY)/2}; }
+},{passive:false});
+viewport.addEventListener('touchmove',(e)=>{
+  if(e.touches.length===1 && isDragging){
+    e.preventDefault();
+    if(Math.hypot(e.touches[0].clientX-startX,e.touches[0].clientY-startY)>4) panMoved=true;
+    panX=startPanX+(e.touches[0].clientX-startX); panY=startPanY+(e.touches[0].clientY-startY); applyTransform();
+  }
+  else if(e.touches.length===2 && touchStartDist){
+    e.preventDefault();
+    const [t1,t2]=e.touches; const dist=Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY);
+    const rect=viewport.getBoundingClientRect(); const mx=touchStartMid.x-rect.left, my=touchStartMid.y-rect.top;
+    const worldMX=(mx-panX)/scale, worldMY=(my-panY)/scale;
+    scale=clampScale(touchStartScale*(dist/touchStartDist));
+    panX=mx-worldMX*scale; panY=my-worldMY*scale; applyTransform();
+  }
+},{passive:false});
+viewport.addEventListener('touchend',()=>{ isDragging=false; touchStartDist=null; });
+
+document.getElementById('zoomIn').addEventListener('click',()=>{ cancelAnimation(); const r=viewport.getBoundingClientRect(); const mx=r.width/2,my=r.height/2; const wx=(mx-panX)/scale,wy=(my-panY)/scale; scale=clampScale(scale*1.2); panX=mx-wx*scale; panY=my-wy*scale; applyTransform(); });
+document.getElementById('zoomOut').addEventListener('click',()=>{ cancelAnimation(); const r=viewport.getBoundingClientRect(); const mx=r.width/2,my=r.height/2; const wx=(mx-panX)/scale,wy=(my-panY)/scale; scale=clampScale(scale/1.2); panX=mx-wx*scale; panY=my-wy*scale; applyTransform(); });
+document.getElementById('resetView').addEventListener('click', ()=>{ clearSelection(); fitToView(true); });
+
+function focusOn(n, targetScale){
+  const rect = viewport.getBoundingClientRect();
+  const [x,y] = pt(n);
+  const s = (targetScale!==undefined && targetScale!==null) ? clampScale(targetScale) : scale;
+  const targetPanX = rect.width/2 - x*s;
+  const targetPanY = rect.height/2 - y*s;
+  animateTo(s, targetPanX, targetPanY);
+}
+
+/* ---------- 下部：アクセシブルな人物一覧 ---------- */
+renderList();
+
+/* ---------- 系図の表示エリアの高さをドラッグで変更 ---------- */
+(function(){
+  const handle = document.getElementById('resizeHandle');
+  if(!handle) return;
+  let startY = 0, startH = 0, dragging = false;
+  handle.addEventListener('mousedown', (e)=>{
+    dragging = true; startY = e.clientY; startH = viewport.getBoundingClientRect().height;
+    handle.classList.add('dragging');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if(!dragging) return;
+    const h = Math.max(280, Math.min(1400, startH + (e.clientY - startY)));
+    viewport.style.height = h + 'px';
+    fitToView();
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    dragging = false; handle.classList.remove('dragging');
+  });
+  handle.addEventListener('touchstart', (e)=>{
+    dragging = true; startY = e.touches[0].clientY; startH = viewport.getBoundingClientRect().height;
+    handle.classList.add('dragging');
+  }, {passive:true});
+  window.addEventListener('touchmove', (e)=>{
+    if(!dragging) return;
+    const h = Math.max(280, Math.min(1400, startH + (e.touches[0].clientY - startY)));
+    viewport.style.height = h + 'px';
+    fitToView();
+  }, {passive:true});
+  window.addEventListener('touchend', ()=>{ dragging=false; handle.classList.remove('dragging'); });
+})();
+
+window.addEventListener('resize', ()=> fitToView());
+fitToView();
+
+/* ---------- ホームページ等の外部リンクから特定人物へ直接フォーカスする ----------
+   使い方: 系図ページのURLに ?person=人物ID を付けてリンクする。
+   例: shibata_katsuie_genealogy.html?person=shibata_katsuie
+   人物IDは各系図データのnodeのidと同じもの(下の nodes 配列を参照)。
+   ページを開いた瞬間、まず全体を一瞬表示してから、その人物のカードへ
+   ズームイン＆ハイライトし、右側の詳細パネルも自動で開く。 */
+const FOCUS_ZOOM_SCALE = 1.15; // クローズアップ時の倍率。読みやすさに応じて調整可(0.15〜2.6)
+(function focusFromURL(){
+  const params = new URLSearchParams(location.search);
+  const targetId = params.get('person') || (location.hash ? decodeURIComponent(location.hash.slice(1)) : null);
+  if(!targetId || !nodeById[targetId]) return;
+  requestAnimationFrame(()=>{
+    selectNode(targetId, { zoom: FOCUS_ZOOM_SCALE });
+  });
+})();
+</script>
+
+
+
+</body></html>
