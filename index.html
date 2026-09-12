@@ -15,6 +15,7 @@
     --ink-soft:#6b675c;
     --line:#ddd6c6;
     --gold:#a4926a;
+    --hanko:#a63c3c; /* 表題横の朱印(スタンプ)専用。--brickとは別に用意 */
     /* --brick:#9c5040 は養子線・削除・警告専用のため、この一覧では使用しない */
   }
   *{ box-sizing:border-box; }
@@ -26,11 +27,46 @@
     line-height:1.7;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{
-    max-width:720px;
-    margin:0 auto;
-    padding:72px 24px 120px;
+  .page{
+    max-width:1320px; margin:0 auto; padding:0 24px;
+    display:flex; align-items:flex-start; gap:36px; justify-content:center;
   }
+  .wrap{
+    max-width:720px; width:100%;
+    margin:0 auto;
+    padding:72px 0 120px;
+  }
+  .side-rail{
+    width:220px; flex:0 0 220px; padding-top:96px; display:none;
+  }
+  @media(min-width:1180px){ .side-rail{ display:block; } }
+  .side-rail h3{
+    font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--paper);
+    background:var(--ink); display:inline-block; padding:4px 10px; margin:0 0 14px;
+  }
+  .side-rail ul{ list-style:none; margin:0; padding:0; }
+  .side-rail li{ margin-bottom:14px; }
+  .side-rail a{
+    display:block; text-decoration:none; color:var(--ink);
+    padding:10px 12px; border:1px solid var(--line); background:var(--card);
+    transition:border-color .15s;
+  }
+  .side-rail a:hover{ border-color:var(--ink); }
+  .side-rail .rail-name{ display:block; font-size:14px; font-weight:700; }
+  .side-rail .rail-meta{ display:block; font-size:11px; color:var(--ink-soft); margin-top:3px; }
+  .side-rail.right p.rail-note{ font-size:12px; color:var(--ink-soft); line-height:1.8; padding:0 2px; }
+  .rail-h3-second{
+    font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--paper);
+    background:var(--ink); display:inline-block; padding:4px 10px; margin:28px 0 14px;
+  }
+  .profile-card{ text-align:center; }
+  .profile-icon{ width:64px; height:64px; margin:0 auto 12px; display:block; }
+  .profile-card .rail-note{ text-align:left; }
+  .profile-link{
+    display:inline-block; margin-top:8px; font-size:12px; color:var(--ink);
+    text-decoration:underline; text-decoration-color:var(--line);
+  }
+  .profile-link:hover{ text-decoration-color:var(--ink); }
   header{ margin-bottom:48px; }
   .site-nav{
     display:flex;
@@ -48,13 +84,33 @@
   .site-nav a:last-child{ border-right:none; }
   .site-nav a:hover{ color:var(--ink); }
   .site-nav a.active{ color:var(--ink); font-weight:500; }
-  .site-title{
-    font-family:'Zen Old Mincho', serif;
-    font-size:clamp(26px,4vw,34px);
-    font-weight:600;
-    letter-spacing:.08em;
-    margin:0 0 10px;
+  .site-title-row{
+    display:flex; align-items:flex-end; gap:18px; margin:0 0 10px;
   }
+  .site-title{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:clamp(34px,6.2vw,54px);
+    font-weight:700;
+    letter-spacing:.06em;
+    margin:0; line-height:1.15;
+  }
+  .site-title .sub-part{
+    font-size:0.42em;
+    font-weight:500;
+    letter-spacing:.05em;
+    margin-left:.3em;
+  }
+  .site-title .b-men{
+    color:var(--hanko);
+    font-style:italic;
+    position:relative;
+    padding:0 2px;
+  }
+  .hanko-stamp{
+    flex:0 0 auto; width:56px; height:56px; margin-bottom:2px;
+    transform:rotate(-6deg);
+  }
+  .hanko-stamp svg{ display:block; width:100%; height:100%; }
   .site-sub{
     font-family:'Zen Old Mincho', serif;
     font-style:normal;
@@ -69,46 +125,30 @@
     margin:0;
     background:linear-gradient(90deg, var(--gold), transparent 75%);
   }
-  .hero-mark{
-    width:150px;
-    margin:4px 0 28px;
+  .registry{
+    margin-top:8px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
   }
-  .hero-mark svg{ display:block; width:100%; height:auto; }
-  .registry{ margin-top:8px; }
   .house{
-    display:flex;
-    gap:18px;
-    padding:26px 0;
-    border-bottom:1px solid var(--line);
+    display:block;
+    padding:18px 16px;
+    border:1px solid var(--line);
+    border-left:3px solid var(--house-color, var(--gold));
+    background:var(--paper);
   }
-  .house:first-of-type{ border-top:1px solid var(--line); }
-  .house-mark{
-    flex:0 0 3px;
-    width:3px;
-    background:var(--house-color, var(--gold));
-    margin-top:6px;
-  }
-  .house-mark.placeholder{
-    width:0;
-    border-left:1px dashed var(--ink-soft);
-  }
-  .house-info{ flex:1; min-width:0; }
-  .house-name{
-    font-family:'Zen Old Mincho', serif;
-    font-size:19px;
-    font-weight:600;
-    letter-spacing:.05em;
-    margin:0 0 10px;
-  }
+  .house-mark, .house-mark.placeholder{ display:none; }
+  .house-info{ min-width:0; }
   a.entry-link{
     display:block;
     text-decoration:none;
     color:inherit;
-    padding:10px 14px;
-    margin:0 -14px;
-    transition:background .15s ease;
+    padding:0;
+    margin:0;
+    transition:opacity .15s ease;
   }
-  a.entry-link:hover{ background:var(--card); }
+  a.entry-link:hover{ opacity:.72; }
   a.entry-link:focus-visible{
     outline:2px solid var(--gold);
     outline-offset:2px;
@@ -116,33 +156,35 @@
   .figure-name{
     display:block;
     font-size:16px;
-    font-weight:500;
+    font-weight:700;
     margin-bottom:4px;
   }
   .figure-meta{
-    font-size:13px;
+    font-size:12px;
     color:var(--ink-soft);
+    line-height:1.6;
   }
-  .house.pending .house-name{ color:var(--ink-soft); }
+  .house.pending{ opacity:.6; }
   .retainer-block{
-    margin-top:4px;
-    padding-left:18px;
-    border-left:1px dashed var(--line);
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
   }
   .retainer-label{
+    display:block;
     font-family:'Cormorant Garamond', serif;
     font-style:italic;
-    font-size:12.5px;
+    font-size:11.5px;
     color:var(--ink-soft);
-    margin:12px 0 2px;
+    margin:0 0 6px;
   }
-  a.entry-link.retainer{ padding-top:8px; padding-bottom:8px; }
-  a.entry-link.retainer .figure-name{ font-size:14.5px; font-weight:400; }
-  a.entry-link.retainer .figure-meta{ font-size:12px; }
+  a.entry-link.retainer{ padding:0; margin-top:8px; }
+  a.entry-link.retainer .figure-name{ font-size:14px; font-weight:500; }
+  a.entry-link.retainer .figure-meta{ font-size:11px; }
   .pending-label{
     font-family:'Cormorant Garamond', serif;
     font-style:italic;
-    font-size:14px;
+    font-size:13px;
     color:var(--ink-soft);
   }
   footer{
@@ -150,9 +192,54 @@
     font-size:12px;
     color:var(--ink-soft);
   }
+  .person-tags{ margin:22px 0 6px; }
+  .person-tags-label{
+    display:inline-block; background:var(--ink); color:var(--paper);
+    font-size:12px; font-weight:700; letter-spacing:.04em;
+    padding:4px 12px; margin-bottom:10px;
+  }
+  .person-tags-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .person-tags-list a{
+    display:inline-block; padding:6px 14px; font-size:13px; font-weight:500;
+    color:var(--ink); text-decoration:none; background:var(--paper);
+    border:1px solid var(--ink); border-radius:999px; transition:background .15s, color .15s;
+  }
+  .person-tags-list a:hover{ background:var(--ink); color:var(--paper); }
+  .sample-genealogy{
+    margin:32px 0 8px; padding:20px 20px 16px; background:var(--card);
+    border:1px solid var(--line);
+  }
+  .sample-label{ margin:0 0 12px; }
+  .sample-svg{ display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  .sample-caption{ font-size:11.5px; color:var(--ink-soft); margin:10px 2px 0; line-height:1.8; }
 </style>
 </head>
 <body>
+<div class="page">
+  <aside class="side-rail left">
+    <h3>新着の系図</h3>
+    <ul>
+      <li>
+        <a href="todo_takatora_genealogy.html?person=todo_takatora">
+          <span class="rail-name">藤堂高虎</span>
+          <span class="rail-meta">虎高の代から津藩・久居藩の代々藩主まで</span>
+        </a>
+      </li>
+      <li>
+        <a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">
+          <span class="rail-name">丹羽長秀</span>
+          <span class="rail-meta">忠長の代から二本松藩・旗本家の江戸後期まで</span>
+        </a>
+      </li>
+      <li>
+        <a href="shibata_katsuie_genealogy.html?person=katsuie">
+          <span class="rail-name">柴田勝家</span>
+          <span class="rail-meta">浅井長政の三代前から江戸期の子孫まで</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
 <div class="wrap">
 
   <header>
@@ -163,25 +250,82 @@
       <a href="privacy.html">プライバシーポリシー</a>
       <a href="contact.html">お問い合わせ</a>
     </nav>
-    <div class="hero-mark" aria-hidden="true">
-      <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
-        <path d="M70,24 C70,52 108,52 108,72" fill="none" stroke="var(--line)" stroke-width="1.3"/>
-        <path d="M150,24 C150,50 112,50 112,72" fill="none" stroke="var(--line)" stroke-width="1.3"/>
-        <path d="M150,24 C150,50 188,50 188,72" fill="none" stroke="var(--line)" stroke-width="1.3"/>
-        <path d="M230,24 C230,52 192,52 192,72" fill="none" stroke="var(--line)" stroke-width="1.3"/>
-        <path d="M110,72 C110,96 148,96 148,114" fill="none" stroke="var(--ink-soft)" stroke-width="1.3"/>
-        <path d="M190,72 C190,96 152,96 152,114" fill="none" stroke="var(--ink-soft)" stroke-width="1.3"/>
-        <circle cx="70" cy="24" r="6.5" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.3"/>
-        <circle cx="150" cy="24" r="6.5" fill="var(--paper)" stroke="var(--ink-soft)" stroke-width="1.3" stroke-dasharray="2.5 2.5"/>
-        <circle cx="230" cy="24" r="6.5" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.3"/>
-        <circle cx="110" cy="72" r="6.5" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.3"/>
-        <circle cx="190" cy="72" r="6.5" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.3"/>
-        <circle cx="150" cy="114" r="8.5" fill="var(--paper)" stroke="var(--gold)" stroke-width="1.6"/>
-      </svg>
+    <div class="site-title-row">
+      <h1 class="site-title">日本史の<span class="b-men">B面</span><span class="sub-part">系図版</span></h1>
+      <div class="hanko-stamp" aria-hidden="true">
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="52" height="52" rx="6" fill="none" stroke="var(--hanko)" stroke-width="3"/>
+          <text x="30" y="40" text-anchor="middle" font-family="'Zen Old Mincho', serif" font-size="26" font-weight="700" fill="var(--hanko)">系</text>
+        </svg>
+      </div>
     </div>
-    <h1 class="site-title">日本史のB面 系図版</h1>
     <p class="site-sub">系図を見れば、教科書には載らない歴史が見えてくる。</p>
     <hr class="brush-rule">
+    <nav class="person-tags" aria-label="人物からさがす">
+      <span class="person-tags-label">人物からさがす</span>
+      <div class="person-tags-list">
+        <a href="shibata_katsuie_genealogy.html?person=katsuie">柴田勝家</a>
+        <a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">丹羽長秀</a>
+        <a href="todo_takatora_genealogy.html?person=todo_takatora">藤堂高虎</a>
+        <a href="oda_nobunaga_genealogy.html">織田信長</a>
+        <a href="toyotomi_hideyoshi_genealogy.html">豊臣秀吉</a>
+        <a href="tokugawa_ieyasu_genealogy.html">徳川家康</a>
+        <a href="date_masamune_genealogy.html">伊達政宗</a>
+        <a href="takeda_shingen_genealogy.html">武田信玄</a>
+        <a href="uesugi_kenshin_genealogy.html">上杉謙信</a>
+        <a href="uesugi_kagekatsu_genealogy.html">上杉景勝</a>
+        <a href="naoe_kanetsugu_genealogy.html">直江兼続</a>
+        <a href="mori_motonari_genealogy.html">毛利元就</a>
+        <a href="shimazu_yoshihiro_genealogy.html">島津義弘</a>
+        <a href="azai_nagamasa_genealogy.html">浅井長政</a>
+        <a href="maeda_toshiie_genealogy.html">前田利家</a>
+        <a href="ishida_mitsunari_genealogy.html">石田三成</a>
+        <a href="ishikawa_kazumasa_genealogy.html">石川数正</a>
+        <a href="akechi_mitsuhide_genealogy.html">明智光秀</a>
+        <a href="sanada_masayuki_genealogy.html">真田昌幸・幸村</a>
+      </div>
+    </nav>
+
+    <div class="sample-genealogy">
+      <span class="rail-h3-second sample-label">系図のサンプル</span>
+      <svg class="sample-svg" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <line x1="150" y1="60" x2="230" y2="110" stroke="var(--ink-soft)" stroke-width="1.6"/>
+        <line x1="150" y1="60" x2="70" y2="110" stroke="var(--gold)" stroke-width="1.6" stroke-dasharray="4 5"/>
+        <line x1="230" y1="110" x2="150" y2="160" stroke="var(--ink-soft)" stroke-width="1.6"/>
+        <line x1="230" y1="110" x2="310" y2="160" stroke="var(--ink-soft)" stroke-width="1.6"/>
+        <line x1="230" y1="110" x2="390" y2="160" stroke="var(--hanko)" stroke-width="1.6" stroke-dasharray="2 4"/>
+
+        <g font-family="'Zen Old Mincho', serif">
+          <g transform="translate(110,40)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">某 某守</text>
+          </g>
+          <g transform="translate(190,90)">
+            <rect width="80" height="40" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">〇〇 某</text>
+          </g>
+          <g transform="translate(30,90)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="3 3"/>
+            <text x="40" y="25" text-anchor="middle" font-size="12" fill="var(--ink-soft)">氏名不詳</text>
+          </g>
+          <g transform="translate(110,140)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">某 三郎</text>
+          </g>
+          <g transform="translate(270,140)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">某 四郎</text>
+          </g>
+          <g transform="translate(350,140)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">氏名不詳</text>
+          </g>
+        </g>
+      </svg>
+      <p class="sample-caption">
+        実線は実子、点線は養子・不確かな続柄を表します。カードをクリックすると出典や続柄の詳細が開きます。
+      </p>
+    </div>
   </header>
 
   <main class="registry">
@@ -190,7 +334,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">柴田家</h2>
         <a class="entry-link" href="shibata_katsuie_genealogy.html?person=katsuie">
           <span class="figure-name">柴田勝家</span>
           <span class="figure-meta">浅井長政の三代前から江戸期の子孫まで ・ 全37名</span>
@@ -202,7 +345,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">丹羽家</h2>
         <a class="entry-link" href="niwa_nagahide_genealogy.html?person=niwa_nagahide">
           <span class="figure-name">丹羽長秀</span>
           <span class="figure-meta">忠長の代から二本松藩・旗本家の江戸後期まで ・ 全60名</span>
@@ -214,7 +356,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">藤堂家</h2>
         <a class="entry-link" href="todo_takatora_genealogy.html?person=todo_takatora">
           <span class="figure-name">藤堂高虎</span>
           <span class="figure-meta">虎高の代から津藩・久居藩の代々藩主、多賀一族の養子縁組まで ・ 全51名</span>
@@ -227,7 +368,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">伊達家</h2>
         <a class="entry-link" href="date_masamune_genealogy.html">
           <span class="figure-name">伊達政宗</span>
           <span class="figure-meta">稙宗の代から政宗の子女まで ・ 全52名</span>
@@ -239,7 +379,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">豊臣家</h2>
         <a class="entry-link" href="toyotomi_hideyoshi_genealogy.html">
           <span class="figure-name">豊臣秀吉</span>
           <span class="figure-meta">木下弥右衛門の代から秀頼・千姫まで ・ 全43名</span>
@@ -251,7 +390,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">浅井家</h2>
         <a class="entry-link" href="azai_nagamasa_genealogy.html">
           <span class="figure-name">浅井長政</span>
           <span class="figure-meta">曾祖父の代から浅井三姉妹まで ・ 全20名</span>
@@ -263,7 +401,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">前田家</h2>
         <a class="entry-link" href="maeda_toshiie_genealogy.html">
           <span class="figure-name">前田利家</span>
           <span class="figure-meta">荒子の前田家から加賀藩主家(綱紀)まで ・ 全20名</span>
@@ -275,7 +412,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">石田家</h2>
         <a class="entry-link" href="ishida_mitsunari_genealogy.html">
           <span class="figure-name">石田三成</span>
           <span class="figure-meta">近江・石田村の一族から津軽へ落ち延びた子女まで ・ 全19名</span>
@@ -287,7 +423,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">上杉家</h2>
         <a class="entry-link" href="uesugi_kagekatsu_genealogy.html">
           <span class="figure-name">上杉景勝</span>
           <span class="figure-meta">実父・長尾政景の代から米沢藩主家(綱憲)まで ・ 全10名</span>
@@ -310,7 +445,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">毛利家</h2>
         <a class="entry-link" href="mori_motonari_genealogy.html">
           <span class="figure-name">毛利元就</span>
           <span class="figure-meta">5代前の広房から5代後の長州藩主家まで ・ 全17名</span>
@@ -322,7 +456,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">島津家</h2>
         <a class="entry-link" href="shimazu_yoshihiro_genealogy.html">
           <span class="figure-name">島津義弘</span>
           <span class="figure-meta">曾祖父・善久の代から薩摩藩主家(光久)まで ・ 全21名</span>
@@ -334,7 +467,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">徳川家</h2>
         <a class="entry-link" href="tokugawa_ieyasu_genealogy.html">
           <span class="figure-name">徳川家康</span>
           <span class="figure-meta">安城松平家の代から御三家・孫世代まで ・ 全44名</span>
@@ -353,7 +485,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">武田家</h2>
         <a class="entry-link" href="takeda_shingen_genealogy.html">
           <span class="figure-name">武田信玄</span>
           <span class="figure-meta">曾祖父・信昌の代から武田家滅亡まで ・ 全16名</span>
@@ -365,7 +496,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">明智家</h2>
         <a class="entry-link" href="akechi_mitsuhide_genealogy.html">
           <span class="figure-name">明智光秀</span>
           <span class="figure-meta">美濃・明智一族から細川ガラシャまで ・ 全14名</span>
@@ -377,7 +507,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">真田家</h2>
         <a class="entry-link" href="sanada_masayuki_genealogy.html">
           <span class="figure-name">真田昌幸・幸村</span>
           <span class="figure-meta">祖父・幸隆の代から仙台真田家まで ・ 全12名</span>
@@ -389,7 +518,6 @@
     <section class="house" style="--house-color:#2b2f2d">
       <div class="house-mark"></div>
       <div class="house-info">
-        <h2 class="house-name">織田家</h2>
         <a class="entry-link" href="oda_nobunaga_genealogy.html">
           <span class="figure-name">織田信長</span>
           <span class="figure-meta">祖父・信定の代から三法師(秀信)まで ・ 全18名</span>
@@ -401,7 +529,6 @@
     <section class="house pending">
       <div class="house-mark placeholder"></div>
       <div class="house-info">
-        <h2 class="house-name">-- 家</h2>
         <span class="pending-label">準備中</span>
       </div>
     </section>
@@ -412,6 +539,32 @@
     &copy; 日本史のB面
   </footer>
 
+</div>
+
+  <aside class="side-rail right">
+    <h3>このサイトについて</h3>
+    <p class="rail-note">
+      教科書には載らない、系図でしか見えてこない歴史のつながりを紹介しています。
+      一次史料(寛政重脩諸家譜など)にあたりながら、少しずつ人物を増やしています。
+    </p>
+    <p class="rail-note">
+      「人物からさがす」タグから、気になる武将の系図に直接ジャンプできます。
+    </p>
+
+    <h3 class="rail-h3-second">プロフィール</h3>
+    <div class="profile-card">
+      <svg class="profile-icon" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="40" cy="40" r="39" fill="var(--card)" stroke="var(--line)"/>
+        <circle cx="40" cy="32" r="14" fill="var(--line)"/>
+        <path d="M14,72 C14,52 26,44 40,44 C54,44 66,52 66,72 Z" fill="var(--line)"/>
+      </svg>
+      <p class="rail-note">
+        戦国期の系図が好きで、史料を読みながら少しずつ人物を掘り起こしています。
+        寛政重脩諸家譜などの一次史料を優先し、Wikipediaのみの情報は「諸説」として区別しています。
+      </p>
+      <a class="profile-link" href="about.html">プロフィール詳細 →</a>
+    </div>
+  </aside>
 </div>
 </body>
 </html>
