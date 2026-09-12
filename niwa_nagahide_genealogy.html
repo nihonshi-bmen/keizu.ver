@@ -61,6 +61,13 @@
   .world{ position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform; }
   .world.animating{ transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
   svg.edges{ position:absolute; top:0; left:0; overflow:visible; }
+  #groupBoxLayer{ position:absolute; top:0; left:0; }
+  .group-box{ position:absolute; border-radius:28px; border:2px solid; pointer-events:none; }
+  .group-box-label{
+    position:absolute; top:-14px; left:16px; padding:2px 12px; border-radius:10px;
+    font-family:"Shippori Antique B1", serif; font-size:13px; font-weight:700; letter-spacing:.06em;
+    background:var(--bg,#f5f2ea); opacity:0.9;
+  }
   .edge-label rect{ fill:var(--paper); stroke:var(--line); stroke-width:1; }
   .edge-label text{ fill:var(--ink-soft); font:500 10px "Zen Kaku Gothic New",sans-serif; text-anchor:middle; }
 
@@ -185,8 +192,8 @@
   .ef_relations.disabled{ opacity:0.4; pointer-events:none; }
 
   .panel{
-    position:absolute; top:64px; right:14px; width:270px; max-height:70%; overflow-y:auto;
-    background:var(--card); border:1px solid var(--ink);
+    position:absolute; top:14px; right:14px; max-height:calc(100% - 156px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--ink); width:270px;
     box-shadow:0 8px 24px rgba(32,30,26,.14); padding:18px; z-index:35; display:none;
   }
   .panel.show{ display:block; }
@@ -198,6 +205,12 @@
   .panel .ptags{ margin-top:10px; }
   .panel .ptag{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:10px; margin:0 6px 6px 0; background:transparent; border:1px solid currentColor; }
   .panel .pnote{ font-size:12.5px; line-height:1.85; color:var(--ink); margin-top:10px; }
+  .panel .prelatives{ margin-top:10px; padding-top:9px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink); line-height:1.9; }
+  .panel .prelatives .rel-row{ display:flex; gap:6px; }
+  .panel .prelatives .rel-label{ flex:0 0 auto; width:4.2em; color:var(--ink-soft); font-weight:700; }
+  .panel .prelatives .rel-values{ flex:1; }
+  .panel .prelatives .rel-link{ color:var(--ink); text-decoration:underline; text-decoration-color:var(--line); cursor:pointer; }
+  .panel .prelatives .rel-link:hover{ text-decoration-color:var(--ink); }
   .panel .psources{ margin-top:12px; padding-top:9px; border-top:1px solid var(--line); font-size:10.5px; color:var(--ink-soft); }
   .panel .psources ul{ margin:4px 0 0; padding-left:18px; }
 
@@ -219,7 +232,7 @@
        系図の上半分が常に見える状態を保ちつつ、詳細を確認できるようにする。 */
     .panel{
       position:fixed; top:auto; left:0; right:0; bottom:0; width:100%;
-      max-height:45vh; border-radius:14px 14px 0 0; border-bottom:none;
+      max-height:38vh; border-radius:14px 14px 0 0; border-bottom:none;
       box-shadow:0 -8px 24px rgba(32,30,26,.22); padding:16px 18px 22px;
       box-sizing:border-box; z-index:200;
     }
@@ -255,6 +268,7 @@
 
   <div class="viewport" id="viewport">
     <div class="world" id="world" style="width: 3387.19px; height: 2126.38px; transform: translate(572.139px, -98.4173px) scale(0.227858);">
+      <div id="groupBoxLayer"></div>
       <svg class="edges" id="edges" width="3387.1886252347413" height="2126.3768256573567"><g class="edge" data-a="niwa_tadanaga" data-b="niwa_nagamasa">
       <line x1="1857.740836064481" y1="272" x2="1857.7408360644815" y2="341.6249647293191" stroke="#2b2f2d" stroke-width="2" opacity="0.6"></line>
       <g class="edge-label"><rect x="1842.7408360644813" y="289.81248236465956" width="30" height="22" rx="11"></rect><text x="1857.7408360644813" y="304.81248236465956">父</text></g>
@@ -528,6 +542,7 @@
         <span class="ptag" id="pCertainty"></span>
       </div>
       <div class="pnote" id="pNote"></div>
+      <div class="prelatives" id="pRelatives"></div>
       <div class="psources" id="pSources"></div>
     </div>
   </div>
@@ -1774,7 +1789,12 @@ const viewport = document.getElementById('viewport');
 const world = document.getElementById('world');
 const svg = document.getElementById('edges');
 const nodesLayer = document.getElementById('nodesLayer');
+const groupBoxLayer = document.getElementById('groupBoxLayer');
 const nodeById = Object.fromEntries(nodes.map(n=>[n.id,n]));
+
+const groupBoxes = [
+  /* 例: { label:"○○家", color:"#8a6d3b", members:["id1","id2","id3"] }, */
+];
 (function(){
   const t = document.getElementById('mainTitle'), s = document.getElementById('mainSubtitle');
   if(t) t.dataset.orig = t.textContent;
@@ -1900,6 +1920,21 @@ function renderAll(){
   });
   svg.innerHTML = svgHTML;
 
+  let groupBoxHTML = "";
+  groupBoxes.forEach(g=>{
+    const pts = g.members.map(id=>nodeById[id]).filter(Boolean).map(n=>pt(n));
+    if(pts.length===0) return;
+    const hw = 90, hh = 62, PAD2 = 26;
+    const gMinX = Math.min(...pts.map(p=>p[0])) - hw - PAD2;
+    const gMaxX = Math.max(...pts.map(p=>p[0])) + hw + PAD2;
+    const gMinY = Math.min(...pts.map(p=>p[1])) - hh - PAD2 - 18;
+    const gMaxY = Math.max(...pts.map(p=>p[1])) + hh + PAD2;
+    groupBoxHTML += `<div class="group-box" style="left:${gMinX}px; top:${gMinY}px; width:${gMaxX-gMinX}px; height:${gMaxY-gMinY}px; border-color:${g.color}; background-color:${g.color}20; opacity:0.9;">
+      <div class="group-box-label" style="color:${g.color}; border:1.5px solid ${g.color};">${g.label}</div>
+    </div>`;
+  });
+  groupBoxLayer.innerHTML = groupBoxHTML;
+
   nodesLayer.innerHTML = "";
   nodes.forEach(n=>{
     const [x,y] = pt(n);
@@ -1954,6 +1989,47 @@ function applyHighlight(id){
     el.style.opacity = onPath ? '1' : '0.12';
   });
 }
+/* 父/養父/母/養母/兄弟姉妹/子を parentEdges から自動的に算出する。
+   ラベルに「養」の字が入っていれば養親、「父」「母」が入っていればそちら側に分類する。
+   兄弟姉妹は、実の親を1人以上共有する人物(本人を除く)。 */
+function getRelatives(id){
+  const asChild = parentEdges.filter(e=>e[1]===id);
+  const asParent = parentEdges.filter(e=>e[0]===id);
+  const father=[], adoptiveFather=[], mother=[], adoptiveMother=[];
+  asChild.forEach(([p,,label,kind])=>{
+    const isAdopt = kind==='adoption' || (label||'').includes('養');
+    const isMother = (label||'').includes('母');
+    if(isAdopt) (isMother ? adoptiveMother : adoptiveFather).push(p);
+    else (isMother ? mother : father).push(p);
+  });
+  const bloodParentIds = new Set(asChild.filter(e=>e[3]!=='adoption' && !(e[2]||'').includes('養')).map(e=>e[0]));
+  const siblingSet = new Set();
+  bloodParentIds.forEach(pid=>{
+    parentEdges.forEach(([p,c,,kind])=>{
+      if(p===pid && c!==id && kind!=='adoption') siblingSet.add(c);
+    });
+  });
+  const children = [...new Set(asParent.map(e=>e[1]))];
+  return { father, adoptiveFather, mother, adoptiveMother, siblings:[...siblingSet], children };
+}
+function relLinkList(ids){
+  return ids.map(id=>{
+    const p = nodeById[id]; if(!p) return '';
+    return `<span class="rel-link" data-goto="${id}">${p.name}</span>`;
+  }).filter(Boolean).join('、');
+}
+function renderRelatives(id){
+  const r = getRelatives(id);
+  const rows = [
+    ['父', r.father], ['養父', r.adoptiveFather],
+    ['母', r.mother], ['養母', r.adoptiveMother],
+    ['兄弟姉妹', r.siblings], ['子', r.children],
+  ].filter(([,ids])=>ids.length>0);
+  if(rows.length===0) return '';
+  return rows.map(([label,ids])=>
+    `<div class="rel-row"><span class="rel-label">${label}</span><span class="rel-values">${relLinkList(ids)}</span></div>`
+  ).join('');
+}
 function selectNode(id, opts){
   lastSelectedId = id;
   const n = nodeById[id];
@@ -1965,6 +2041,11 @@ function selectNode(id, opts){
   const hEl = document.getElementById('pHouse'); hEl.textContent = houseLabels[n.house]; hEl.style.color = houseColors[n.house];
   const cEl = document.getElementById('pCertainty'); cEl.textContent = cm.label; cEl.style.color = cm.color;
   document.getElementById('pNote').textContent = n.note||"";
+  const relEl = document.getElementById('pRelatives');
+  relEl.innerHTML = renderRelatives(id);
+  relEl.querySelectorAll('.rel-link').forEach(a=>{
+    a.addEventListener('click', (e)=>{ e.stopPropagation(); selectNode(a.getAttribute('data-goto'), {zoom:true}); });
+  });
   const srcEl = document.getElementById('pSources');
   srcEl.innerHTML = (n.sources&&n.sources.length) ? `<strong>根拠・参照</strong><ul>${n.sources.map(s=>`<li>${s}</li>`).join('')}</ul>` : '';
   panel.classList.add('show');
@@ -1979,41 +2060,50 @@ function clearSelection(){
 document.getElementById('panelClose').addEventListener('click', clearSelection);
 viewport.addEventListener('click', (e)=>{ if(panMoved){ panMoved=false; return; } clearSelection(); });
 
-/* ---------- スマホ幅:パネルを下スワイプで閉じる ---------- */
+/* ---------- スマホ幅:パネルの高さをドラッグで調整(下に大きく引くと閉じる) ---------- */
 (function(){
   const panelEl = document.getElementById('panel');
   const handle = document.getElementById('panelHandle');
-  let dragging = false, startY = 0, currentDy = 0;
-  const DISMISS_THRESHOLD = 90;
+  let dragging = false, startY = 0, startHeight = 0, currentHeight = 0;
+  const DISMISS_HEIGHT = 90; // これより低くなったら閉じる
+  const MIN_HEIGHT = 90;
 
   function isMobileSheet(){ return window.matchMedia('(max-width:640px)').matches; }
+  function maxAllowedHeight(){ return Math.round(window.innerHeight * 0.85); }
 
   function onStart(clientY, fromHandle){
     if(!isMobileSheet()) return false;
     // ハンドル以外から始める場合は、パネル内が一番上までスクロールされている時だけ許可
     if(!fromHandle && panelEl.scrollTop > 0) return false;
-    dragging = true; startY = clientY; currentDy = 0;
+    dragging = true; startY = clientY;
+    startHeight = panelEl.getBoundingClientRect().height;
+    currentHeight = startHeight;
     panelEl.classList.add('dragging');
     return true;
   }
   function onMove(clientY){
     if(!dragging) return;
-    const dy = clientY - startY;
-    if(dy <= 0){ currentDy = 0; panelEl.style.transform = ''; return; }
-    currentDy = dy;
-    panelEl.style.transform = `translateY(${dy}px)`;
+    const dy = clientY - startY; // 下に引く(正の値)ほど縮める、上に押し上げるほど広げる
+    const h = Math.max(MIN_HEIGHT, Math.min(maxAllowedHeight(), startHeight - dy));
+    currentHeight = h;
+    panelEl.style.transition = 'none';
+    panelEl.style.height = h + 'px';
+    panelEl.style.maxHeight = h + 'px';
   }
   function onEnd(){
     if(!dragging) return;
     dragging = false;
     panelEl.classList.remove('dragging');
-    if(currentDy > DISMISS_THRESHOLD){
-      panelEl.style.transform = `translateY(100%)`;
-      setTimeout(()=>{ clearSelection(); panelEl.style.transform=''; }, 160);
-    } else {
-      panelEl.style.transform = '';
+    panelEl.style.transition = '';
+    if(currentHeight <= DISMISS_HEIGHT){
+      panelEl.style.height = '0px';
+      setTimeout(()=>{
+        clearSelection();
+        panelEl.style.height = ''; panelEl.style.maxHeight = '';
+      }, 160);
     }
-    currentDy = 0;
+    // 閉じない場合は、ユーザーが調整した高さをそのまま維持する
+    // (次に別の人物を選んでも、この高さが引き継がれる)
   }
 
   handle.addEventListener('touchstart', (e)=>{ if(onStart(e.touches[0].clientY, true)) e.preventDefault(); }, {passive:false});
@@ -2025,6 +2115,11 @@ viewport.addEventListener('click', (e)=>{ if(panMoved){ panMoved=false; return; 
   }, {passive:false});
   panelEl.addEventListener('touchend', onEnd);
   panelEl.addEventListener('touchcancel', onEnd);
+
+  // マウスでも同様に操作できるようにする(タブレット・デバッグ用)
+  handle.addEventListener('mousedown', (e)=>{ if(onStart(e.clientY, true)) e.preventDefault(); });
+  window.addEventListener('mousemove', (e)=>{ if(dragging) onMove(e.clientY); });
+  window.addEventListener('mouseup', onEnd);
 })();
 
 
@@ -2529,6 +2624,7 @@ window.addEventListener('mousemove',(e)=>{ if(!isDragging) return; if(Math.hypot
 window.addEventListener('mouseup',()=>{ isDragging=false; viewport.classList.remove('dragging'); });
 
 viewport.addEventListener('wheel',(e)=>{
+  if(e.target.closest('.panel')) return; // パネル上ではズームさせず、パネル自身のスクロールに任せる
   e.preventDefault();
   cancelAnimation();
   const rect = viewport.getBoundingClientRect();
@@ -2565,12 +2661,16 @@ document.getElementById('zoomIn').addEventListener('click',()=>{ cancelAnimation
 document.getElementById('zoomOut').addEventListener('click',()=>{ cancelAnimation(); const r=viewport.getBoundingClientRect(); const mx=r.width/2,my=r.height/2; const wx=(mx-panX)/scale,wy=(my-panY)/scale; scale=clampScale(scale/1.2); panX=mx-wx*scale; panY=my-wy*scale; applyTransform(); });
 document.getElementById('resetView').addEventListener('click', ()=>{ clearSelection(); fitToView(true); });
 
+function isMobileSheetView(){ return window.matchMedia('(max-width:640px)').matches; }
 function focusOn(n, targetScale){
   const rect = viewport.getBoundingClientRect();
   const [x,y] = pt(n);
   const s = (targetScale!==undefined && targetScale!==null) ? clampScale(targetScale) : scale;
   const targetPanX = rect.width/2 - x*s;
-  const targetPanY = rect.height/2 - y*s;
+  // スマホでは下部にパネル(ボトムシート)が重なるため、
+  // パネルに隠れない「見えている範囲」の中央に来るよう、中心をやや上に寄せる。
+  const centerY = isMobileSheetView() ? rect.height * 0.38 : rect.height/2;
+  const targetPanY = centerY - y*s;
   animateTo(s, targetPanX, targetPanY);
 }
 
@@ -2620,12 +2720,13 @@ fitToView();
    ページを開いた瞬間、まず全体を一瞬表示してから、その人物のカードへ
    ズームイン＆ハイライトし、右側の詳細パネルも自動で開く。 */
 const FOCUS_ZOOM_SCALE = 1.15; // クローズアップ時の倍率。読みやすさに応じて調整可(0.15〜2.6)
+const FOCUS_ZOOM_SCALE_MOBILE = 0.95; // スマホではパネルとの重なりを減らすため、少し引きにする
 (function focusFromURL(){
   const params = new URLSearchParams(location.search);
   const targetId = params.get('person') || (location.hash ? decodeURIComponent(location.hash.slice(1)) : null);
   if(!targetId || !nodeById[targetId]) return;
   requestAnimationFrame(()=>{
-    selectNode(targetId, { zoom: FOCUS_ZOOM_SCALE });
+    selectNode(targetId, { zoom: isMobileSheetView() ? FOCUS_ZOOM_SCALE_MOBILE : FOCUS_ZOOM_SCALE });
   });
 })();
 </script>

@@ -84,18 +84,15 @@
   .site-nav a:last-child{ border-right:none; }
   .site-nav a:hover{ color:var(--ink); }
   .site-nav a.active{ color:var(--ink); font-weight:500; }
-  .site-title-row{
-    display:flex; align-items:flex-end; gap:18px; margin:0 0 10px;
-  }
   .site-title{
     font-family:'Zen Kaku Gothic New', sans-serif;
-    font-size:clamp(34px,6.2vw,54px);
+    font-size:clamp(44px,8.5vw,76px);
     font-weight:700;
     letter-spacing:.06em;
-    margin:0; line-height:1.15;
+    margin:0 0 10px; line-height:1.1;
   }
   .site-title .sub-part{
-    font-size:0.42em;
+    font-size:0.34em;
     font-weight:500;
     letter-spacing:.05em;
     margin-left:.3em;
@@ -106,11 +103,6 @@
     position:relative;
     padding:0 2px;
   }
-  .hanko-stamp{
-    flex:0 0 auto; width:56px; height:56px; margin-bottom:2px;
-    transform:rotate(-6deg);
-  }
-  .hanko-stamp svg{ display:block; width:100%; height:100%; }
   .site-sub{
     font-family:'Zen Old Mincho', serif;
     font-style:normal;
@@ -134,8 +126,8 @@
   .house{
     display:block;
     padding:18px 16px;
-    border:1px solid var(--line);
-    border-left:3px solid var(--house-color, var(--gold));
+    border:1px solid var(--ink);
+    border-radius:10px;
     background:var(--paper);
   }
   .house-mark, .house-mark.placeholder{ display:none; }
@@ -192,12 +184,20 @@
     font-size:12px;
     color:var(--ink-soft);
   }
-  .person-tags{ margin:22px 0 6px; }
-  .person-tags-label{
-    display:inline-block; background:var(--ink); color:var(--paper);
-    font-size:12px; font-weight:700; letter-spacing:.04em;
-    padding:4px 12px; margin-bottom:10px;
+  .search-tabs{ margin:22px 0 6px; }
+  .search-tabs-buttons{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .search-tab-btn{
+    font-family:inherit; font-size:12px; font-weight:700; letter-spacing:.04em;
+    padding:5px 14px; border:none; cursor:pointer;
+    background:var(--card); color:var(--ink);
   }
+  .search-tab-btn.is-active{ background:var(--ink); color:var(--paper); }
+  .search-tab-btn.is-disabled{ cursor:default; color:var(--ink-soft); }
+  .search-tab-btn .tab-soon{
+    font-size:9.5px; margin-left:6px; padding:1px 6px; border:1px solid var(--ink-soft);
+    border-radius:999px; vertical-align:middle;
+  }
+  .search-tab-panel{ }
   .person-tags-list{ display:flex; flex-wrap:wrap; gap:8px; }
   .person-tags-list a{
     display:inline-block; padding:6px 14px; font-size:13px; font-weight:500;
@@ -205,6 +205,21 @@
     border:1px solid var(--ink); border-radius:999px; transition:background .15s, color .15s;
   }
   .person-tags-list a:hover{ background:var(--ink); color:var(--paper); }
+
+  .region-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:20px 24px;
+    padding:18px; background:var(--card); border:1px solid var(--line);
+  }
+  @media(max-width:700px){ .region-grid{ grid-template-columns:repeat(2, 1fr); } }
+  .region-col h4{
+    font-size:12.5px; font-weight:700; letter-spacing:.03em; margin:0 0 8px;
+    padding-bottom:5px; border-bottom:1px solid var(--ink);
+  }
+  .region-col ul{ list-style:none; margin:0; padding:0; }
+  .region-col li{ margin-bottom:5px; font-size:12.5px; line-height:1.6; }
+  .region-col a{ color:var(--ink); text-decoration:underline; text-decoration-color:var(--line); }
+  .region-col a:hover{ text-decoration-color:var(--ink); }
+  .region-col .soon{ color:var(--ink-soft); }
   .sample-genealogy{
     margin:32px 0 8px; padding:20px 20px 16px; background:var(--card);
     border:1px solid var(--line);
@@ -250,19 +265,17 @@
       <a href="privacy.html">プライバシーポリシー</a>
       <a href="contact.html">お問い合わせ</a>
     </nav>
-    <div class="site-title-row">
-      <h1 class="site-title">日本史の<span class="b-men">B面</span><span class="sub-part">系図版</span></h1>
-      <div class="hanko-stamp" aria-hidden="true">
-        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="4" width="52" height="52" rx="6" fill="none" stroke="var(--hanko)" stroke-width="3"/>
-          <text x="30" y="40" text-anchor="middle" font-family="'Zen Old Mincho', serif" font-size="26" font-weight="700" fill="var(--hanko)">系</text>
-        </svg>
-      </div>
-    </div>
+    <h1 class="site-title">日本史の<span class="b-men">B面</span><span class="sub-part">系図版</span></h1>
     <p class="site-sub">系図を見れば、教科書には載らない歴史が見えてくる。</p>
     <hr class="brush-rule">
-    <nav class="person-tags" aria-label="人物からさがす">
-      <span class="person-tags-label">人物からさがす</span>
+    <nav class="search-tabs" aria-label="人物・地域・時代からさがす">
+      <div class="search-tabs-buttons">
+        <button class="search-tab-btn is-active" data-tab="person">人物からさがす</button>
+        <button class="search-tab-btn" data-tab="region">地域で探す</button>
+        <button class="search-tab-btn is-disabled" data-tab="era" disabled>時代で探す<span class="tab-soon">準備中</span></button>
+      </div>
+
+      <div class="search-tab-panel" data-panel="person">
       <div class="person-tags-list">
         <a href="shibata_katsuie_genealogy.html?person=katsuie">柴田勝家</a>
         <a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">丹羽長秀</a>
@@ -283,6 +296,128 @@
         <a href="ishikawa_kazumasa_genealogy.html">石川数正</a>
         <a href="akechi_mitsuhide_genealogy.html">明智光秀</a>
         <a href="sanada_masayuki_genealogy.html">真田昌幸・幸村</a>
+      </div>
+      </div>
+
+      <div class="search-tab-panel" data-panel="region" hidden>
+        <div class="region-grid">
+          <div class="region-col">
+            <h4>北海道・東北</h4>
+            <ul>
+              <li><a href="date_masamune_genealogy.html">伊達政宗</a></li>
+              <li><span class="soon">伊達稙宗</span></li>
+              <li><span class="soon">伊達晴宗</span></li>
+              <li><span class="soon">最上義光</span></li>
+              <li><span class="soon">蘆名盛氏</span></li>
+              <li><span class="soon">相馬義胤</span></li>
+              <li><span class="soon">南部晴政</span></li>
+              <li><span class="soon">南部信直</span></li>
+              <li><span class="soon">津軽為信</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>関東</h4>
+            <ul>
+              <li><span class="soon">北条早雲(伊勢宗瑞)</span></li>
+              <li><span class="soon">北条氏綱</span></li>
+              <li><span class="soon">北条氏政</span></li>
+              <li><span class="soon">北条氏直</span></li>
+              <li><span class="soon">佐竹義重</span></li>
+              <li><span class="soon">佐竹義宣</span></li>
+              <li><span class="soon">里見義堯</span></li>
+              <li><span class="soon">太田道灌</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>甲信越</h4>
+            <ul>
+              <li><a href="takeda_shingen_genealogy.html">武田信玄</a></li>
+              <li><a href="uesugi_kenshin_genealogy.html">上杉謙信</a></li>
+              <li><a href="uesugi_kagekatsu_genealogy.html">上杉景勝</a></li>
+              <li><a href="naoe_kanetsugu_genealogy.html">直江兼続</a></li>
+              <li><a href="sanada_masayuki_genealogy.html">真田昌幸・幸村</a></li>
+              <li><span class="soon">武田勝頼</span></li>
+              <li><span class="soon">武田信繁</span></li>
+              <li><span class="soon">上杉景虎</span></li>
+              <li><span class="soon">真田信之</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>東海</h4>
+            <ul>
+              <li><a href="oda_nobunaga_genealogy.html">織田信長</a></li>
+              <li><a href="toyotomi_hideyoshi_genealogy.html">豊臣秀吉</a></li>
+              <li><a href="tokugawa_ieyasu_genealogy.html">徳川家康</a></li>
+              <li><a href="todo_takatora_genealogy.html?person=todo_takatora">藤堂高虎</a></li>
+              <li><a href="maeda_toshiie_genealogy.html">前田利家</a></li>
+              <li><a href="ishikawa_kazumasa_genealogy.html">石川数正</a></li>
+              <li><span class="soon">今川義元</span></li>
+              <li><span class="soon">今川氏真</span></li>
+              <li><span class="soon">斎藤道三</span></li>
+              <li><span class="soon">斎藤義龍</span></li>
+              <li><span class="soon">斎藤龍興</span></li>
+              <li><span class="soon">織田信秀</span></li>
+              <li><span class="soon">織田信忠</span></li>
+              <li><span class="soon">織田信雄</span></li>
+              <li><span class="soon">井伊直政</span></li>
+              <li><span class="soon">酒井忠次</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>北陸・近畿</h4>
+            <ul>
+              <li><a href="shibata_katsuie_genealogy.html?person=katsuie">柴田勝家</a></li>
+              <li><a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">丹羽長秀</a></li>
+              <li><a href="azai_nagamasa_genealogy.html">浅井長政</a></li>
+              <li><a href="akechi_mitsuhide_genealogy.html">明智光秀</a></li>
+              <li><a href="ishida_mitsunari_genealogy.html">石田三成</a></li>
+              <li><span class="soon">朝倉義景</span></li>
+              <li><span class="soon">蒲生氏郷</span></li>
+              <li><span class="soon">細川藤孝(幽斎)</span></li>
+              <li><span class="soon">三好長慶</span></li>
+              <li><span class="soon">松永久秀</span></li>
+              <li><span class="soon">足利義輝</span></li>
+              <li><span class="soon">足利義昭</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>中国</h4>
+            <ul>
+              <li><a href="mori_motonari_genealogy.html">毛利元就</a></li>
+              <li><span class="soon">尼子経久</span></li>
+              <li><span class="soon">尼子晴久</span></li>
+              <li><span class="soon">尼子勝久</span></li>
+              <li><span class="soon">大内義興</span></li>
+              <li><span class="soon">大内義隆</span></li>
+              <li><span class="soon">陶晴賢</span></li>
+              <li><span class="soon">吉川元春</span></li>
+              <li><span class="soon">小早川隆景</span></li>
+              <li><span class="soon">毛利輝元</span></li>
+              <li><span class="soon">宇喜多直家</span></li>
+              <li><span class="soon">宇喜多秀家</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>四国</h4>
+            <ul>
+              <li><span class="soon">長宗我部盛親</span></li>
+              <li><span class="soon">十河一存</span></li>
+              <li><span class="soon">河野通直</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>九州・沖縄</h4>
+            <ul>
+              <li><a href="shimazu_yoshihiro_genealogy.html">島津義弘</a></li>
+              <li><span class="soon">島津義久</span></li>
+              <li><span class="soon">島津家久</span></li>
+              <li><span class="soon">島津忠恒(家久)</span></li>
+              <li><span class="soon">大友宗麟</span></li>
+              <li><span class="soon">龍造寺隆信</span></li>
+              <li><span class="soon">鍋島直茂</span></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </nav>
 
@@ -566,5 +701,22 @@
     </div>
   </aside>
 </div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('.search-tab-btn:not(.is-disabled)');
+  var panels = document.querySelectorAll('.search-tab-panel');
+  function activate(tab){
+    btns.forEach(function(b){ b.classList.toggle('is-active', b.dataset.tab===tab); });
+    panels.forEach(function(p){ p.hidden = (p.dataset.panel!==tab); });
+  }
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){ activate(b.dataset.tab); });
+    // カーソルを合わせただけでも切り替える(タッチ端末は無視)
+    b.addEventListener('mouseenter', function(){
+      if(matchMedia('(hover:hover)').matches) activate(b.dataset.tab);
+    });
+  });
+})();
+</script>
 </body>
 </html>

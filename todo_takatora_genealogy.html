@@ -232,7 +232,7 @@
        系図の上半分が常に見える状態を保ちつつ、詳細を確認できるようにする。 */
     .panel{
       position:fixed; top:auto; left:0; right:0; bottom:0; width:100%;
-      max-height:45vh; border-radius:14px 14px 0 0; border-bottom:none;
+      max-height:38vh; border-radius:14px 14px 0 0; border-bottom:none;
       box-shadow:0 -8px 24px rgba(32,30,26,.22); padding:16px 18px 22px;
       box-sizing:border-box; z-index:200;
     }
@@ -2057,41 +2057,50 @@ function clearSelection(){
 document.getElementById('panelClose').addEventListener('click', clearSelection);
 viewport.addEventListener('click', (e)=>{ if(panMoved){ panMoved=false; return; } clearSelection(); });
 
-/* ---------- スマホ幅:パネルを下スワイプで閉じる ---------- */
+/* ---------- スマホ幅:パネルの高さをドラッグで調整(下に大きく引くと閉じる) ---------- */
 (function(){
   const panelEl = document.getElementById('panel');
   const handle = document.getElementById('panelHandle');
-  let dragging = false, startY = 0, currentDy = 0;
-  const DISMISS_THRESHOLD = 90;
+  let dragging = false, startY = 0, startHeight = 0, currentHeight = 0;
+  const DISMISS_HEIGHT = 90; // これより低くなったら閉じる
+  const MIN_HEIGHT = 90;
 
   function isMobileSheet(){ return window.matchMedia('(max-width:640px)').matches; }
+  function maxAllowedHeight(){ return Math.round(window.innerHeight * 0.85); }
 
   function onStart(clientY, fromHandle){
     if(!isMobileSheet()) return false;
     // ハンドル以外から始める場合は、パネル内が一番上までスクロールされている時だけ許可
     if(!fromHandle && panelEl.scrollTop > 0) return false;
-    dragging = true; startY = clientY; currentDy = 0;
+    dragging = true; startY = clientY;
+    startHeight = panelEl.getBoundingClientRect().height;
+    currentHeight = startHeight;
     panelEl.classList.add('dragging');
     return true;
   }
   function onMove(clientY){
     if(!dragging) return;
-    const dy = clientY - startY;
-    if(dy <= 0){ currentDy = 0; panelEl.style.transform = ''; return; }
-    currentDy = dy;
-    panelEl.style.transform = `translateY(${dy}px)`;
+    const dy = clientY - startY; // 下に引く(正の値)ほど縮める、上に押し上げるほど広げる
+    const h = Math.max(MIN_HEIGHT, Math.min(maxAllowedHeight(), startHeight - dy));
+    currentHeight = h;
+    panelEl.style.transition = 'none';
+    panelEl.style.height = h + 'px';
+    panelEl.style.maxHeight = h + 'px';
   }
   function onEnd(){
     if(!dragging) return;
     dragging = false;
     panelEl.classList.remove('dragging');
-    if(currentDy > DISMISS_THRESHOLD){
-      panelEl.style.transform = `translateY(100%)`;
-      setTimeout(()=>{ clearSelection(); panelEl.style.transform=''; }, 160);
-    } else {
-      panelEl.style.transform = '';
+    panelEl.style.transition = '';
+    if(currentHeight <= DISMISS_HEIGHT){
+      panelEl.style.height = '0px';
+      setTimeout(()=>{
+        clearSelection();
+        panelEl.style.height = ''; panelEl.style.maxHeight = '';
+      }, 160);
     }
-    currentDy = 0;
+    // 閉じない場合は、ユーザーが調整した高さをそのまま維持する
+    // (次に別の人物を選んでも、この高さが引き継がれる)
   }
 
   handle.addEventListener('touchstart', (e)=>{ if(onStart(e.touches[0].clientY, true)) e.preventDefault(); }, {passive:false});
@@ -2103,6 +2112,11 @@ viewport.addEventListener('click', (e)=>{ if(panMoved){ panMoved=false; return; 
   }, {passive:false});
   panelEl.addEventListener('touchend', onEnd);
   panelEl.addEventListener('touchcancel', onEnd);
+
+  // マウスでも同様に操作できるようにする(タブレット・デバッグ用)
+  handle.addEventListener('mousedown', (e)=>{ if(onStart(e.clientY, true)) e.preventDefault(); });
+  window.addEventListener('mousemove', (e)=>{ if(dragging) onMove(e.clientY); });
+  window.addEventListener('mouseup', onEnd);
 })();
 
 
@@ -2644,12 +2658,16 @@ document.getElementById('zoomIn').addEventListener('click',()=>{ cancelAnimation
 document.getElementById('zoomOut').addEventListener('click',()=>{ cancelAnimation(); const r=viewport.getBoundingClientRect(); const mx=r.width/2,my=r.height/2; const wx=(mx-panX)/scale,wy=(my-panY)/scale; scale=clampScale(scale/1.2); panX=mx-wx*scale; panY=my-wy*scale; applyTransform(); });
 document.getElementById('resetView').addEventListener('click', ()=>{ clearSelection(); fitToView(true); });
 
+function isMobileSheetView(){ return window.matchMedia('(max-width:640px)').matches; }
 function focusOn(n, targetScale){
   const rect = viewport.getBoundingClientRect();
   const [x,y] = pt(n);
   const s = (targetScale!==undefined && targetScale!==null) ? clampScale(targetScale) : scale;
   const targetPanX = rect.width/2 - x*s;
-  const targetPanY = rect.height/2 - y*s;
+  // スマホでは下部にパネル(ボトムシート)が重なるため、
+  // パネルに隠れない「見えている範囲」の中央に来るよう、中心をやや上に寄せる。
+  const centerY = isMobileSheetView() ? rect.height * 0.38 : rect.height/2;
+  const targetPanY = centerY - y*s;
   animateTo(s, targetPanX, targetPanY);
 }
 
@@ -2699,12 +2717,13 @@ fitToView();
    ページを開いた瞬間、まず全体を一瞬表示してから、その人物のカードへ
    ズームイン＆ハイライトし、右側の詳細パネルも自動で開く。 */
 const FOCUS_ZOOM_SCALE = 1.15; // クローズアップ時の倍率。読みやすさに応じて調整可(0.15〜2.6)
+const FOCUS_ZOOM_SCALE_MOBILE = 0.95; // スマホではパネルとの重なりを減らすため、少し引きにする
 (function focusFromURL(){
   const params = new URLSearchParams(location.search);
   const targetId = params.get('person') || (location.hash ? decodeURIComponent(location.hash.slice(1)) : null);
   if(!targetId || !nodeById[targetId]) return;
   requestAnimationFrame(()=>{
-    selectNode(targetId, { zoom: FOCUS_ZOOM_SCALE });
+    selectNode(targetId, { zoom: isMobileSheetView() ? FOCUS_ZOOM_SCALE_MOBILE : FOCUS_ZOOM_SCALE });
   });
 })();
 </script>
