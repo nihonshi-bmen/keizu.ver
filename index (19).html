@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本史のB面 系図版 ー 目録</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f9faf9;
+    --card:#eceae4;
+    --ink:#2b2f2d;
+    --ink-soft:#6b675c;
+    --line:#ddd6c6;
+    --gold:#a4926a;
+    --hanko:#a63c3c; /* 表題横の朱印(スタンプ)専用。--brickとは別に用意 */
+    /* --brick:#9c5040 は養子線・削除・警告専用のため、この一覧では使用しない */
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1320px; margin:0 auto; padding:0 24px;
+    display:flex; align-items:flex-start; gap:36px; justify-content:center;
+  }
+  .wrap{
+    max-width:720px; width:100%;
+    margin:0 auto;
+    padding:72px 0 120px;
+  }
+  .side-rail{
+    width:220px; flex:0 0 220px; padding-top:96px; display:none;
+  }
+  @media(min-width:1180px){ .side-rail{ display:block; } }
+  .side-rail h3{
+    font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--paper);
+    background:var(--ink); display:inline-block; padding:4px 10px; margin:0 0 14px;
+  }
+  .side-rail ul{ list-style:none; margin:0; padding:0; }
+  .side-rail li{ margin-bottom:14px; }
+  .side-rail a{
+    display:block; text-decoration:none; color:var(--ink);
+    padding:10px 12px; border:1px solid var(--line); background:var(--card);
+    transition:border-color .15s;
+  }
+  .side-rail a:hover{ border-color:var(--ink); }
+  .side-rail .rail-name{ display:block; font-size:14px; font-weight:700; }
+  .side-rail .rail-meta{ display:block; font-size:11px; color:var(--ink-soft); margin-top:3px; }
+  .side-rail.right p.rail-note{ font-size:12px; color:var(--ink-soft); line-height:1.8; padding:0 2px; }
+  .rail-h3-second{
+    font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--paper);
+    background:var(--ink); display:inline-block; padding:4px 10px; margin:28px 0 14px;
+  }
+  .profile-card{ text-align:center; }
+  .profile-icon{ width:64px; height:64px; margin:0 auto 12px; display:block; }
+  .profile-card .rail-note{ text-align:left; }
+  .profile-link{
+    display:inline-block; margin-top:8px; font-size:12px; color:var(--ink);
+    text-decoration:underline; text-decoration-color:var(--line);
+  }
+  .profile-link:hover{ text-decoration-color:var(--ink); }
+  header{ margin-bottom:48px; }
+  .site-nav{
+    display:flex;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .site-nav a{
+    font-size:13px;
+    color:var(--ink-soft);
+    text-decoration:none;
+    padding:0 14px;
+    border-right:1px solid var(--line);
+  }
+  .site-nav a:first-child{ padding-left:0; }
+  .site-nav a:last-child{ border-right:none; }
+  .site-nav a:hover{ color:var(--ink); }
+  .site-nav a.active{ color:var(--ink); font-weight:500; }
+  .site-title{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:clamp(44px,8.5vw,76px);
+    font-weight:700;
+    letter-spacing:.06em;
+    margin:0 0 10px; line-height:1.1;
+  }
+  .site-title .sub-part{
+    font-size:0.34em;
+    font-weight:500;
+    letter-spacing:.05em;
+    margin-left:.3em;
+  }
+  .site-title .b-men{
+    color:var(--hanko);
+    font-style:italic;
+    position:relative;
+    padding:0 2px;
+  }
+  .site-sub{
+    font-family:'Zen Old Mincho', serif;
+    font-style:normal;
+    color:var(--ink-soft);
+    font-size:15px;
+    letter-spacing:.03em;
+    margin:0 0 24px;
+  }
+  .brush-rule{
+    height:1px;
+    border:none;
+    margin:0;
+    background:linear-gradient(90deg, var(--gold), transparent 75%);
+  }
+  .registry{
+    margin-top:8px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+  .house{
+    display:block;
+    padding:18px 16px;
+    border:1px solid var(--ink);
+    border-radius:10px;
+    background:var(--paper);
+  }
+  .house-mark, .house-mark.placeholder{ display:none; }
+  .house-info{ min-width:0; }
+  a.entry-link{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    padding:0;
+    margin:0;
+    transition:opacity .15s ease;
+  }
+  a.entry-link:hover{ opacity:.72; }
+  a.entry-link:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:2px;
+  }
+  .figure-name{
+    display:block;
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  .figure-meta{
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  .house.pending{ opacity:.6; }
+  .retainer-block{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+  .retainer-label{
+    display:block;
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+  }
+  a.entry-link.retainer{ padding:0; margin-top:8px; }
+  a.entry-link.retainer .figure-name{ font-size:14px; font-weight:500; }
+  a.entry-link.retainer .figure-meta{ font-size:11px; }
+  .pending-label{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  footer{
+    margin-top:60px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .search-tabs{ margin:22px 0 6px; }
+  .search-tabs-buttons{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .search-tab-btn{
+    font-family:inherit; font-size:12px; font-weight:700; letter-spacing:.04em;
+    padding:5px 14px; border:none; cursor:pointer;
+    background:var(--card); color:var(--ink);
+  }
+  .search-tab-btn.is-active{ background:var(--ink); color:var(--paper); }
+  .search-tab-btn.is-disabled{ cursor:default; color:var(--ink-soft); }
+  .search-tab-btn .tab-soon{
+    font-size:9.5px; margin-left:6px; padding:1px 6px; border:1px solid var(--ink-soft);
+    border-radius:999px; vertical-align:middle;
+  }
+  .search-tab-panel{ }
+  .person-tags-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .person-tags-list a{
+    display:inline-block; padding:6px 14px; font-size:13px; font-weight:500;
+    color:var(--ink); text-decoration:none; background:var(--paper);
+    border:1px solid var(--ink); border-radius:999px; transition:background .15s, color .15s;
+  }
+  .person-tags-list a:hover{ background:var(--ink); color:var(--paper); }
+
+  .region-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:20px 24px;
+    padding:18px; background:var(--card); border:1px solid var(--line);
+  }
+  @media(max-width:700px){ .region-grid{ grid-template-columns:repeat(2, 1fr); } }
+  .region-col h4{
+    font-size:12.5px; font-weight:700; letter-spacing:.03em; margin:0 0 8px;
+    padding-bottom:5px; border-bottom:1px solid var(--ink);
+  }
+  .region-col ul{ list-style:none; margin:0; padding:0; }
+  .region-col li{ margin-bottom:5px; font-size:12.5px; line-height:1.6; }
+  .region-col a{ color:var(--ink); text-decoration:underline; text-decoration-color:var(--line); }
+  .region-col a:hover{ text-decoration-color:var(--ink); }
+  .region-col .soon{ color:var(--ink-soft); }
+  .sample-genealogy{
+    margin:32px 0 8px; padding:20px 20px 16px; background:var(--card);
+    border:1px solid var(--line);
+  }
+  .sample-label{ margin:0 0 12px; }
+  .sample-svg{ display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  .sample-caption{ font-size:11.5px; color:var(--ink-soft); margin:10px 2px 0; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="page">
+  <aside class="side-rail left">
+    <h3>新着の系図</h3>
+    <ul>
+      <li>
+        <a href="todo_takatora_genealogy.html?person=todo_takatora">
+          <span class="rail-name">藤堂高虎</span>
+          <span class="rail-meta">虎高の代から津藩・久居藩の代々藩主まで</span>
+        </a>
+      </li>
+      <li>
+        <a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">
+          <span class="rail-name">丹羽長秀</span>
+          <span class="rail-meta">忠長の代から二本松藩・旗本家の江戸後期まで</span>
+        </a>
+      </li>
+      <li>
+        <a href="shibata_katsuie_genealogy.html?person=katsuie">
+          <span class="rail-name">柴田勝家</span>
+          <span class="rail-meta">浅井長政の三代前から江戸期の子孫まで</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+<div class="wrap">
+
+  <header>
+    <nav class="site-nav">
+      <a href="index.html" class="active">家系図一覧</a>
+      <a href="about.html">プロフィール</a>
+      <a href="policy.html">方針・注意事項</a>
+      <a href="privacy.html">プライバシーポリシー</a>
+      <a href="contact.html">お問い合わせ</a>
+    </nav>
+    <h1 class="site-title">日本史の<span class="b-men">B面</span><span class="sub-part">系図版</span></h1>
+    <p class="site-sub">系図を見れば、教科書には載らない歴史が見えてくる。</p>
+    <hr class="brush-rule">
+    <nav class="search-tabs" aria-label="人物・地域・時代からさがす">
+      <div class="search-tabs-buttons">
+        <button class="search-tab-btn is-active" data-tab="person">人物からさがす</button>
+        <button class="search-tab-btn" data-tab="region">地域で探す</button>
+        <button class="search-tab-btn is-disabled" data-tab="era" disabled>時代で探す<span class="tab-soon">準備中</span></button>
+      </div>
+
+      <div class="search-tab-panel" data-panel="person">
+      <div class="person-tags-list">
+        <a href="shibata_katsuie_genealogy.html?person=katsuie">柴田勝家</a>
+        <a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">丹羽長秀</a>
+        <a href="todo_takatora_genealogy.html?person=todo_takatora">藤堂高虎</a>
+        <a href="oda_nobunaga_genealogy.html">織田信長</a>
+        <a href="toyotomi_hideyoshi_genealogy.html">豊臣秀吉</a>
+        <a href="toyotomi_hideyoshi_genealogy.html?person=hidenaga">豊臣秀長</a>
+        <a href="tokugawa_ieyasu_genealogy.html">徳川家康</a>
+        <a href="date_masamune_genealogy.html">伊達政宗</a>
+        <a href="takeda_shingen_genealogy.html">武田信玄</a>
+        <a href="uesugi_kenshin_genealogy.html">上杉謙信</a>
+        <a href="uesugi_kagekatsu_genealogy.html">上杉景勝</a>
+        <a href="naoe_kanetsugu_genealogy.html">直江兼続</a>
+        <a href="mori_motonari_genealogy.html">毛利元就</a>
+        <a href="shimazu_yoshihiro_genealogy.html">島津義弘</a>
+        <a href="azai_nagamasa_genealogy.html">浅井長政</a>
+        <a href="maeda_toshiie_genealogy.html">前田利家</a>
+        <a href="ishida_mitsunari_genealogy.html">石田三成</a>
+        <a href="ishikawa_kazumasa_genealogy.html">石川数正</a>
+        <a href="akechi_mitsuhide_genealogy.html">明智光秀</a>
+        <a href="sanada_masayuki_genealogy.html">真田昌幸・幸村</a>
+      </div>
+      </div>
+
+      <div class="search-tab-panel" data-panel="region" hidden>
+        <div class="region-grid">
+          <div class="region-col">
+            <h4>北海道・東北</h4>
+            <ul>
+              <li><a href="date_masamune_genealogy.html">伊達政宗</a></li>
+              <li><span class="soon">伊達稙宗</span></li>
+              <li><span class="soon">伊達晴宗</span></li>
+              <li><span class="soon">最上義光</span></li>
+              <li><span class="soon">蘆名盛氏</span></li>
+              <li><span class="soon">相馬義胤</span></li>
+              <li><span class="soon">南部晴政</span></li>
+              <li><span class="soon">南部信直</span></li>
+              <li><span class="soon">津軽為信</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>関東</h4>
+            <ul>
+              <li><span class="soon">北条早雲(伊勢宗瑞)</span></li>
+              <li><span class="soon">北条氏綱</span></li>
+              <li><span class="soon">北条氏政</span></li>
+              <li><span class="soon">北条氏直</span></li>
+              <li><span class="soon">佐竹義重</span></li>
+              <li><span class="soon">佐竹義宣</span></li>
+              <li><span class="soon">里見義堯</span></li>
+              <li><span class="soon">太田道灌</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>甲信越</h4>
+            <ul>
+              <li><a href="takeda_shingen_genealogy.html">武田信玄</a></li>
+              <li><a href="uesugi_kenshin_genealogy.html">上杉謙信</a></li>
+              <li><a href="uesugi_kagekatsu_genealogy.html">上杉景勝</a></li>
+              <li><a href="naoe_kanetsugu_genealogy.html">直江兼続</a></li>
+              <li><a href="sanada_masayuki_genealogy.html">真田昌幸・幸村</a></li>
+              <li><span class="soon">武田勝頼</span></li>
+              <li><span class="soon">武田信繁</span></li>
+              <li><span class="soon">上杉景虎</span></li>
+              <li><span class="soon">真田信之</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>東海</h4>
+            <ul>
+              <li><a href="oda_nobunaga_genealogy.html">織田信長</a></li>
+              <li><a href="toyotomi_hideyoshi_genealogy.html">豊臣秀吉</a></li>
+              <li><a href="toyotomi_hideyoshi_genealogy.html?person=hidenaga">豊臣秀長</a></li>
+              <li><a href="tokugawa_ieyasu_genealogy.html">徳川家康</a></li>
+              <li><a href="todo_takatora_genealogy.html?person=todo_takatora">藤堂高虎</a></li>
+              <li><a href="maeda_toshiie_genealogy.html">前田利家</a></li>
+              <li><a href="ishikawa_kazumasa_genealogy.html">石川数正</a></li>
+              <li><span class="soon">今川義元</span></li>
+              <li><span class="soon">今川氏真</span></li>
+              <li><span class="soon">斎藤道三</span></li>
+              <li><span class="soon">斎藤義龍</span></li>
+              <li><span class="soon">斎藤龍興</span></li>
+              <li><span class="soon">織田信秀</span></li>
+              <li><span class="soon">織田信忠</span></li>
+              <li><span class="soon">織田信雄</span></li>
+              <li><span class="soon">井伊直政</span></li>
+              <li><span class="soon">酒井忠次</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>北陸・近畿</h4>
+            <ul>
+              <li><a href="shibata_katsuie_genealogy.html?person=katsuie">柴田勝家</a></li>
+              <li><a href="niwa_nagahide_genealogy.html?person=niwa_nagahide">丹羽長秀</a></li>
+              <li><a href="azai_nagamasa_genealogy.html">浅井長政</a></li>
+              <li><a href="akechi_mitsuhide_genealogy.html">明智光秀</a></li>
+              <li><a href="ishida_mitsunari_genealogy.html">石田三成</a></li>
+              <li><span class="soon">朝倉義景</span></li>
+              <li><span class="soon">蒲生氏郷</span></li>
+              <li><span class="soon">細川藤孝(幽斎)</span></li>
+              <li><span class="soon">三好長慶</span></li>
+              <li><span class="soon">松永久秀</span></li>
+              <li><span class="soon">足利義輝</span></li>
+              <li><span class="soon">足利義昭</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>中国</h4>
+            <ul>
+              <li><a href="mori_motonari_genealogy.html">毛利元就</a></li>
+              <li><span class="soon">尼子経久</span></li>
+              <li><span class="soon">尼子晴久</span></li>
+              <li><span class="soon">尼子勝久</span></li>
+              <li><span class="soon">大内義興</span></li>
+              <li><span class="soon">大内義隆</span></li>
+              <li><span class="soon">陶晴賢</span></li>
+              <li><span class="soon">吉川元春</span></li>
+              <li><span class="soon">小早川隆景</span></li>
+              <li><span class="soon">毛利輝元</span></li>
+              <li><span class="soon">宇喜多直家</span></li>
+              <li><span class="soon">宇喜多秀家</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>四国</h4>
+            <ul>
+              <li><span class="soon">長宗我部盛親</span></li>
+              <li><span class="soon">十河一存</span></li>
+              <li><span class="soon">河野通直</span></li>
+            </ul>
+          </div>
+          <div class="region-col">
+            <h4>九州・沖縄</h4>
+            <ul>
+              <li><a href="shimazu_yoshihiro_genealogy.html">島津義弘</a></li>
+              <li><span class="soon">島津義久</span></li>
+              <li><span class="soon">島津家久</span></li>
+              <li><span class="soon">島津忠恒(家久)</span></li>
+              <li><span class="soon">大友宗麟</span></li>
+              <li><span class="soon">龍造寺隆信</span></li>
+              <li><span class="soon">鍋島直茂</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sample-genealogy">
+      <span class="rail-h3-second sample-label">系図のサンプル</span>
+      <svg class="sample-svg" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <line x1="150" y1="60" x2="230" y2="110" stroke="var(--ink-soft)" stroke-width="1.6"/>
+        <line x1="150" y1="60" x2="70" y2="110" stroke="var(--gold)" stroke-width="1.6" stroke-dasharray="4 5"/>
+        <line x1="230" y1="110" x2="150" y2="160" stroke="var(--ink-soft)" stroke-width="1.6"/>
+        <line x1="230" y1="110" x2="310" y2="160" stroke="var(--ink-soft)" stroke-width="1.6"/>
+        <line x1="230" y1="110" x2="390" y2="160" stroke="var(--hanko)" stroke-width="1.6" stroke-dasharray="2 4"/>
+
+        <g font-family="'Zen Old Mincho', serif">
+          <g transform="translate(110,40)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">某 某守</text>
+          </g>
+          <g transform="translate(190,90)">
+            <rect width="80" height="40" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">〇〇 某</text>
+          </g>
+          <g transform="translate(30,90)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="3 3"/>
+            <text x="40" y="25" text-anchor="middle" font-size="12" fill="var(--ink-soft)">氏名不詳</text>
+          </g>
+          <g transform="translate(110,140)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">某 三郎</text>
+          </g>
+          <g transform="translate(270,140)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">某 四郎</text>
+          </g>
+          <g transform="translate(350,140)">
+            <rect width="80" height="40" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="40" y="25" text-anchor="middle" font-size="13" fill="var(--ink)">氏名不詳</text>
+          </g>
+        </g>
+      </svg>
+      <p class="sample-caption">
+        実線は実子、点線は養子・不確かな続柄を表します。カードをクリックすると出典や続柄の詳細が開きます。
+      </p>
+    </div>
+  </header>
+
+  <main class="registry">
+
+    <!-- 公開済み: 柴田家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="shibata_katsuie_genealogy.html?person=katsuie">
+          <span class="figure-name">柴田勝家</span>
+          <span class="figure-meta">浅井長政の三代前から江戸期の子孫まで ・ 全37名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 丹羽家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="niwa_nagahide_genealogy.html?person=niwa_nagahide">
+          <span class="figure-name">丹羽長秀</span>
+          <span class="figure-meta">忠長の代から二本松藩・旗本家の江戸後期まで ・ 全60名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 藤堂家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="todo_takatora_genealogy.html?person=todo_takatora">
+          <span class="figure-name">藤堂高虎</span>
+          <span class="figure-meta">虎高の代から津藩・久居藩の代々藩主、多賀一族の養子縁組まで ・ 全51名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 伊達家 -->
+    <!-- house-color は date_masamune_genealogy.html 内の houseColors に実際に定義されている値に合わせて調整してください -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="date_masamune_genealogy.html">
+          <span class="figure-name">伊達政宗</span>
+          <span class="figure-meta">稙宗の代から政宗の子女まで ・ 全52名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 豊臣家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="toyotomi_hideyoshi_genealogy.html">
+          <span class="figure-name">豊臣秀吉</span>
+          <span class="figure-meta">木下弥右衛門の代から秀頼・千姫まで ・ 全43名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 浅井家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="azai_nagamasa_genealogy.html">
+          <span class="figure-name">浅井長政</span>
+          <span class="figure-meta">曾祖父の代から浅井三姉妹まで ・ 全20名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 前田家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="maeda_toshiie_genealogy.html">
+          <span class="figure-name">前田利家</span>
+          <span class="figure-meta">荒子の前田家から加賀藩主家(綱紀)まで ・ 全20名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 石田家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="ishida_mitsunari_genealogy.html">
+          <span class="figure-name">石田三成</span>
+          <span class="figure-meta">近江・石田村の一族から津軽へ落ち延びた子女まで ・ 全19名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 上杉家(景勝・謙信) + 家臣:直江家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="uesugi_kagekatsu_genealogy.html">
+          <span class="figure-name">上杉景勝</span>
+          <span class="figure-meta">実父・長尾政景の代から米沢藩主家(綱憲)まで ・ 全10名</span>
+        </a>
+        <a class="entry-link" href="uesugi_kenshin_genealogy.html">
+          <span class="figure-name">上杉謙信</span>
+          <span class="figure-meta">祖父・能景の代から養子2人まで ・ 全8名</span>
+        </a>
+        <div class="retainer-block">
+          <p class="retainer-label">上杉家家臣</p>
+          <a class="entry-link retainer" href="naoe_kanetsugu_genealogy.html">
+            <span class="figure-name">直江兼続</span>
+            <span class="figure-meta">樋口家の生まれから直江家を継ぐまで ・ 全9名</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 公開済み: 毛利家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="mori_motonari_genealogy.html">
+          <span class="figure-name">毛利元就</span>
+          <span class="figure-meta">5代前の広房から5代後の長州藩主家まで ・ 全17名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 島津家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="shimazu_yoshihiro_genealogy.html">
+          <span class="figure-name">島津義弘</span>
+          <span class="figure-meta">曾祖父・善久の代から薩摩藩主家(光久)まで ・ 全21名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 徳川家 + 家臣:石川家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="tokugawa_ieyasu_genealogy.html">
+          <span class="figure-name">徳川家康</span>
+          <span class="figure-meta">安城松平家の代から御三家・孫世代まで ・ 全44名</span>
+        </a>
+        <div class="retainer-block">
+          <p class="retainer-label">徳川家家臣</p>
+          <a class="entry-link retainer" href="ishikawa_kazumasa_genealogy.html">
+            <span class="figure-name">石川数正</span>
+            <span class="figure-meta">祖父・清兼の代から松本城主家の改易まで ・ 全11名</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 公開済み: 武田家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="takeda_shingen_genealogy.html">
+          <span class="figure-name">武田信玄</span>
+          <span class="figure-meta">曾祖父・信昌の代から武田家滅亡まで ・ 全16名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 明智家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="akechi_mitsuhide_genealogy.html">
+          <span class="figure-name">明智光秀</span>
+          <span class="figure-meta">美濃・明智一族から細川ガラシャまで ・ 全14名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 真田家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="sanada_masayuki_genealogy.html">
+          <span class="figure-name">真田昌幸・幸村</span>
+          <span class="figure-meta">祖父・幸隆の代から仙台真田家まで ・ 全12名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 公開済み: 織田家 -->
+    <section class="house" style="--house-color:#2b2f2d">
+      <div class="house-mark"></div>
+      <div class="house-info">
+        <a class="entry-link" href="oda_nobunaga_genealogy.html">
+          <span class="figure-name">織田信長</span>
+          <span class="figure-meta">祖父・信定の代から三法師(秀信)まで ・ 全18名</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 今後追加する家は、上と同じ <section class="house"> の構造をコピーして増やしてください -->
+    <section class="house pending">
+      <div class="house-mark placeholder"></div>
+      <div class="house-info">
+        <span class="pending-label">準備中</span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; 日本史のB面
+  </footer>
+
+</div>
+
+  <aside class="side-rail right">
+    <h3>このサイトについて</h3>
+    <p class="rail-note">
+      教科書には載らない、系図でしか見えてこない歴史のつながりを紹介しています。
+      一次史料(寛政重脩諸家譜など)にあたりながら、少しずつ人物を増やしています。
+    </p>
+    <p class="rail-note">
+      「人物からさがす」タグから、気になる武将の系図に直接ジャンプできます。
+    </p>
+
+    <h3 class="rail-h3-second">プロフィール</h3>
+    <div class="profile-card">
+      <svg class="profile-icon" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="40" cy="40" r="39" fill="var(--card)" stroke="var(--line)"/>
+        <circle cx="40" cy="32" r="14" fill="var(--line)"/>
+        <path d="M14,72 C14,52 26,44 40,44 C54,44 66,52 66,72 Z" fill="var(--line)"/>
+      </svg>
+      <p class="rail-note">
+        戦国期の系図が好きで、史料を読みながら少しずつ人物を掘り起こしています。
+        寛政重脩諸家譜などの一次史料を優先し、Wikipediaのみの情報は「諸説」として区別しています。
+      </p>
+      <a class="profile-link" href="about.html">プロフィール詳細 →</a>
+    </div>
+  </aside>
+</div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('.search-tab-btn:not(.is-disabled)');
+  var panels = document.querySelectorAll('.search-tab-panel');
+  function activate(tab){
+    btns.forEach(function(b){ b.classList.toggle('is-active', b.dataset.tab===tab); });
+    panels.forEach(function(p){ p.hidden = (p.dataset.panel!==tab); });
+  }
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){ activate(b.dataset.tab); });
+    // カーソルを合わせただけでも切り替える(タッチ端末は無視)
+    b.addEventListener('mouseenter', function(){
+      if(matchMedia('(hover:hover)').matches) activate(b.dataset.tab);
+    });
+  });
+})();
+</script>
+</body>
+</html>
